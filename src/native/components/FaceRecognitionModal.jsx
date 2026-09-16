@@ -298,7 +298,7 @@ export default function FaceRecognitionModal({
           ctx.fillText('RS JIWA TAMPAN - PEKANBARU', 14, 424);
           ctx.fillStyle = '#ffffff';
           ctx.font = '13px monospace';
-          ctx.fillText(`GPS: 0.4738N, 101.3826E | ${currentSimulatedTime} WIB`, 14, 446);
+          ctx.fillText(`GPS: 0.465791N, 101.381957E | R:200m | ${currentSimulatedTime} WIB`, 14, 446);
           ctx.fillStyle = '#4ade80';
           ctx.font = 'bold 13px sans-serif';
           ctx.fillText(`VALID: Face Match 99.4% | ${user?.name?.slice(0, 24)}`, 14, 468);
@@ -708,7 +708,6 @@ const modalStyles = StyleSheet.create({
     boxShadow: '0 0 12px 2px #38bdf8',
     ...(Platform.OS === 'web'
       ? {
-          animation: 'laserScan 1.4s infinite alternate ease-in-out',
         }
       : {}),
   },

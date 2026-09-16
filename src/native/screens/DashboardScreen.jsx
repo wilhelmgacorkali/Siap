@@ -49,17 +49,8 @@ export default function DashboardScreen({ user, currentTime, attendance = {}, do
   });
 
   const [fullCalendarVisible, setFullCalendarVisible] = useState(false);
-  const [selectedDayToEdit, setSelectedDayToEdit] = useState(null);
+  const [selectedDayView, setSelectedDayView] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
-
-  const handleSelectShift = (day, newShiftCode) => {
-    setRoster((prev) => ({ ...prev, [day]: newShiftCode }));
-    setSelectedDayToEdit(null);
-    const nowToast = new Date();
-    const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    setToastMessage('Shift tgl ' + day + ' ' + MONTHS_SHORT[nowToast.getMonth()] + ' berhasil diubah ke: ' + SHIFT_TYPES[newShiftCode].label);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
 
   const getDayName = (day) => {
     const now = new Date();
@@ -172,7 +163,7 @@ export default function DashboardScreen({ user, currentTime, attendance = {}, do
             <View>
               <Text style={styles.sectionTitle}>🗓️ Jadwal Roster Shift ({MONTHS_FULL_ID[new Date().getMonth()].slice(0,3)} {new Date().getFullYear()})</Text>
               <Text style={{ fontSize: 11, color: '#64748b', marginTop: -6, marginBottom: 8 }}>
-                Ketuk tanggal untuk merubah shift • Geser untuk tanggal lainnya
+                🔒 Jadwal Resmi Terkunci • Ketuk tanggal untuk melihat rincian dinas
               </Text>
             </View>
             <TouchableOpacity
@@ -206,7 +197,7 @@ export default function DashboardScreen({ user, currentTime, attendance = {}, do
                 <TouchableOpacity
                   key={day}
                   activeOpacity={0.75}
-                  onPress={() => setSelectedDayToEdit(day)}
+                  onPress={() => setSelectedDayView(day)}
                   style={[
                     styles.day,
                     isToday && styles.today,
@@ -246,7 +237,7 @@ export default function DashboardScreen({ user, currentTime, attendance = {}, do
                 <View>
                   <Text style={localStyles.modalTitle}>🗓️ Roster Shift Sebulan Penuh</Text>
                   <Text style={localStyles.modalSub}>
-                    September 2026 • Ketuk tanggal mana saja untuk mengganti shift
+                    September 2026 • 🔒 Mode Lihat Jadwal (Terkunci oleh Admin SIMRS)
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -267,7 +258,7 @@ export default function DashboardScreen({ user, currentTime, attendance = {}, do
                 ))}
               </View>
 
-              {/* 30-Day Grid */}
+              {/* 30-Day Grid (View Only) */}
               <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
                 <View style={localStyles.calendarGrid}>
                   {Array.from({ length: 30 }, (_, index) => index + 1).map((day) => {
@@ -280,7 +271,7 @@ export default function DashboardScreen({ user, currentTime, attendance = {}, do
                       <TouchableOpacity
                         key={day}
                         activeOpacity={0.75}
-                        onPress={() => setSelectedDayToEdit(day)}
+                        onPress={() => setSelectedDayView(day)}
                         style={[
                           localStyles.gridCell,
                           isToday && localStyles.gridCellToday,
@@ -318,7 +309,7 @@ export default function DashboardScreen({ user, currentTime, attendance = {}, do
                   onPress={() => setFullCalendarVisible(false)}
                 >
                   <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 13 }}>
-                    Selesai & Simpan Jadwal ✓
+                    Tutup Kalender Roster ✓
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -326,73 +317,81 @@ export default function DashboardScreen({ user, currentTime, attendance = {}, do
           </View>
         </Modal>
 
-        {/* Modal: Ubah Shift Tanggal Terpilih */}
-        <Modal visible={selectedDayToEdit !== null} transparent animationType="fade">
+        {/* Modal: Rincian Jadwal Shift Tanggal Terpilih (View-Only / Tidak Bisa Diubah) */}
+        <Modal visible={selectedDayView !== null} transparent animationType="fade">
           <View style={localStyles.modalBackdrop}>
             <View style={localStyles.editCard}>
               <View style={localStyles.modalHeader}>
                 <View>
-                  <Text style={localStyles.modalTitle}>✎ Ubah Shift Pegawai</Text>
+                  <Text style={localStyles.modalTitle}>📋 Rincian Jadwal Dinas</Text>
                   <Text style={localStyles.modalSub}>
-                    Tanggal {selectedDayToEdit} September 2026 ({selectedDayToEdit ? getDayName(selectedDayToEdit) : ''})
+                    Tanggal {selectedDayView} September 2026 ({selectedDayView ? getDayName(selectedDayView) : ''})
                   </Text>
                 </View>
                 <TouchableOpacity
-                  onPress={() => setSelectedDayToEdit(null)}
+                  onPress={() => setSelectedDayView(null)}
                   style={localStyles.closeBtn}
                 >
                   <Text style={{ color: '#64748b', fontSize: 16, fontWeight: 'bold' }}>✕</Text>
                 </TouchableOpacity>
               </View>
 
-              <Text style={{ fontSize: 12, color: '#475569', marginBottom: 12, fontWeight: '600' }}>
-                Pilih shift dinas baru untuk tanggal ini:
-              </Text>
-
-              {/* Shift Options List */}
-              <View style={{ gap: 8 }}>
-                {Object.values(SHIFT_TYPES).map((s) => {
-                  const isCurrent = roster[selectedDayToEdit] === s.code;
-                  return (
-                    <TouchableOpacity
-                      key={s.code}
-                      activeOpacity={0.7}
-                      onPress={() => handleSelectShift(selectedDayToEdit, s.code)}
+              {/* Shift Information Card */}
+              {selectedDayView && (() => {
+                const shiftCode = roster[selectedDayView] || 'P';
+                const s = SHIFT_TYPES[shiftCode] || SHIFT_TYPES.P;
+                return (
+                  <View style={{ marginVertical: 14 }}>
+                    <View
                       style={[
                         localStyles.shiftOptionRow,
-                        isCurrent && { borderColor: s.color, backgroundColor: s.bg },
+                        { borderColor: s.color, backgroundColor: s.bg, padding: 14 },
                       ]}
                     >
-                      <View style={[localStyles.shiftOptionBadge, { backgroundColor: s.color }]}>
-                        <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 13 }}>{s.code}</Text>
+                      <View style={[localStyles.shiftOptionBadge, { backgroundColor: s.color, width: 42, height: 42 }]}>
+                        <Text style={{ color: '#ffffff', fontWeight: '900', fontSize: 18 }}>{s.code}</Text>
                       </View>
                       <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                          <Text style={{ fontSize: 13, fontWeight: '800', color: '#0f172a' }}>
-                            {s.label}
-                          </Text>
-                          {isCurrent && (
-                            <Text style={{ fontSize: 10, color: s.color, fontWeight: '800' }}>
-                              (Shift Saat Ini)
-                            </Text>
-                          )}
-                        </View>
-                        <Text style={{ fontSize: 11, color: '#64748b' }}>
-                          ⏰ {s.time} • {s.desc}
+                        <Text style={{ fontSize: 15, fontWeight: '800', color: '#0f172a' }}>
+                          {s.label}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: '#475569', marginTop: 2, fontWeight: '700' }}>
+                          ⏰ Jam Dinas: {s.time}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                          {s.desc}
                         </Text>
                       </View>
-                      <Text style={{ fontSize: 16 }}>{isCurrent ? '✓' : '➔'}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+                    </View>
+
+                    {/* Notice bahwa jadwal tidak dapat diubah oleh pegawai */}
+                    <View
+                      style={{
+                        backgroundColor: '#f1f5f9',
+                        borderRadius: 10,
+                        padding: 12,
+                        marginTop: 14,
+                        borderLeftWidth: 4,
+                        borderLeftColor: '#0284c7',
+                      }}
+                    >
+                      <Text style={{ fontSize: 11.5, fontWeight: '800', color: '#0f172a' }}>
+                        🔒 Status Jadwal: Terkunci SIMRS
+                      </Text>
+                      <Text style={{ fontSize: 11, color: '#475569', marginTop: 4, lineHeight: 16 }}>
+                        Pegawai hanya memiliki hak akses untuk melihat jadwal. Perubahan atau penyesuaian shift dinas hanya dapat dilakukan oleh Kepala Ruangan / Admin SIMRS RSJ Tampan.
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })()}
 
               <TouchableOpacity
-                style={localStyles.cancelBtn}
-                onPress={() => setSelectedDayToEdit(null)}
+                style={localStyles.primaryCloseBtn}
+                onPress={() => setSelectedDayView(null)}
               >
-                <Text style={{ color: '#64748b', fontWeight: '700', fontSize: 12.5 }}>
-                  Batal
+                <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 13, textAlign: 'center' }}>
+                  Tutup Informasi
                 </Text>
               </TouchableOpacity>
             </View>

@@ -11,7 +11,8 @@ import {
 import LoginScreen from './screens/LoginScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import AttendanceScreen from './screens/AttendanceScreen';
-import { PdtScreen, ReportsScreen } from './screens/ReportsScreen';
+import { ReportsScreen } from './screens/ReportsScreen';
+import PdtScreen from './screens/PdtScreen';
 import Drawer from './components/Drawer';
 import { styles } from './theme';
 import { RSJ_LOGO_URI } from './assets';
@@ -27,6 +28,7 @@ export default function App() {
   const [attendance, setAttendance] = useState({
     sekarang: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
     dording: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
+    pdt: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
   });
 
   useEffect(() => {
@@ -86,6 +88,17 @@ export default function App() {
     );
   };
 
+  const handleUpdatePdtAttendance = (type, time, scoreData) => {
+    setAttendance((prev) => ({
+      ...prev,
+      pdt: {
+        ...prev.pdt,
+        [type]: time,
+        [`${type}Score`]: scoreData,
+      },
+    }));
+  };
+
   if (!user) {
     return <LoginScreen onLogin={handleLogin} />;
   }
@@ -95,7 +108,7 @@ export default function App() {
       return mode === 'dording' ? 'Presensi Dording' : 'Presensi Sekarang';
     }
     if (screen === 'rekap') return 'Rekap Absensi';
-    if (screen === 'pdt') return 'Presensi Luar Tilok';
+    if (screen === 'pdt') return 'Pegawai Presensi PDT';
     return 'SIAP RSJ Tampan';
   };
 
@@ -181,6 +194,7 @@ export default function App() {
               onCloseModal={() => setModalVisible(false)}
               onSubmit={submitAttendance}
               onSwitchMode={(newMode) => navigate('presensi', newMode)}
+              onNavigateToPdt={() => setScreen('pdt')}
               onBack={() => setScreen('dashboard')}
             />
           )}
@@ -196,8 +210,11 @@ export default function App() {
 
           {screen === 'pdt' && (
             <PdtScreen
+              user={user}
+              currentTime={currentTime}
+              attendance={attendance}
+              onUpdatePdtAttendance={handleUpdatePdtAttendance}
               onBack={() => setScreen('dashboard')}
-              onDone={() => setScreen('dashboard')}
             />
           )}
         </View>

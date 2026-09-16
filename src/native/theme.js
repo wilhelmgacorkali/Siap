@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
   appContainer: {
     flex: 1,
     width: '100%',
-    maxWidth: 480,
+    maxWidth: 1280,
     backgroundColor: '#f8fafc',
     overflow: 'hidden',
     position: 'relative',
@@ -35,7 +35,7 @@ export const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(15, 23, 42, 0.62)',
     ...(Platform.OS === 'web' ? {
-      background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(2, 132, 199, 0.35) 50%, rgba(15, 23, 42, 0.75) 100%)',
+      backgroundImage: 'linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(2, 132, 199, 0.35) 50%, rgba(15, 23, 42, 0.75) 100%)',
     } : {}),
   },
   watermarkLogo: {
@@ -320,9 +320,13 @@ export const styles = StyleSheet.create({
 
   // Action Cards Grid
   cards: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
   },
   actionCard: {
+    flex: 1,
+    minWidth: 280,
     borderRadius: 18,
     padding: 16,
     flexDirection: 'row',

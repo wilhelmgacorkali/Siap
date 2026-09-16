@@ -2,14 +2,23 @@ import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function TilokMap({
-  latitude = 0.4738,
-  longitude = 101.3826,
-  radius = 100, // 100 meters geofencing radius
-  userDistance = 14, // 14 meters away
-  locationName = 'Gedung Instalasi RSJ Tampan - Pekanbaru',
+  latitude = 0.465791,
+  longitude = 101.381957,
+  radius = 200, // 200 meter geofencing radius resmi SIAP RSJ Tampan
+  userDistance = 14, // meter
+  isOutsideRadius = false,
+  customUserPos = null,
+  locationName = 'RS Jiwa Tampan - Pekanbaru',
+  height = 210,
+  showControls = true,
 }) {
   const [currentRadius, setCurrentRadius] = useState(radius);
-  const [mapZoom, setMapZoom] = useState(16);
+  const [mapZoom, setMapZoom] = useState(isOutsideRadius ? 15 : 16);
+
+  // Tentukan posisi user (apakah di dalam radius atau di luar radius)
+  const actualUserDistance = isOutsideRadius ? (userDistance > 200 ? userDistance : 1150) : (userDistance < 200 ? userDistance : 14);
+  const userLat = customUserPos ? customUserPos[0] : (isOutsideRadius ? latitude + 0.0075 : latitude + 0.0001);
+  const userLng = customUserPos ? customUserPos[1] : (isOutsideRadius ? longitude + 0.0065 : longitude - 0.00008);
 
   // Generate self-contained Leaflet HTML with OpenStreetMap tiles & exact geofence circle
   const leafletHtml = `
@@ -26,16 +35,16 @@ export default function TilokMap({
     .pulse-dot {
       width: 14px;
       height: 14px;
-      background: #0284c7;
+      background: ${isOutsideRadius ? '#ea580c' : '#0284c7'};
       border: 2.5px solid #ffffff;
       border-radius: 50%;
-      box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.4);
+      box-shadow: 0 0 0 4px ${isOutsideRadius ? 'rgba(234, 88, 12, 0.4)' : 'rgba(2, 132, 199, 0.4)'};
       animation: pulse 1.8s infinite;
     }
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7); }
-      70% { box-shadow: 0 0 0 10px rgba(2, 132, 199, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
+      0% { box-shadow: 0 0 0 0 ${isOutsideRadius ? 'rgba(234, 88, 12, 0.7)' : 'rgba(2, 132, 199, 0.7)'}; }
+      70% { box-shadow: 0 0 0 10px rgba(0,0,0,0); }
+      100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
     }
     .leaflet-popup-content-wrapper {
       border-radius: 8px;
@@ -45,8 +54,8 @@ export default function TilokMap({
     }
     .custom-label {
       background: rgba(15, 23, 42, 0.9);
-      color: #38bdf8;
-      border: 1px solid #0284c7;
+      color: ${isOutsideRadius ? '#fdba74' : '#38bdf8'};
+      border: 1px solid ${isOutsideRadius ? '#f97316' : '#0284c7'};
       border-radius: 6px;
       padding: 2px 6px;
       font-size: 10px;
@@ -65,6 +74,7 @@ export default function TilokMap({
   <div id="map"></div>
   <script>
     const center = [${latitude}, ${longitude}];
+    const userPos = [${userLat}, ${userLng}];
     const map = L.map('map', {
       center: center,
       zoom: ${mapZoom},
@@ -78,7 +88,7 @@ export default function TilokMap({
       attribution: '&copy; Leaflet | OpenStreetMap'
     }).addTo(map);
 
-    // Red / Pink Geofencing Radius Circle (sesuai tampilan SIAP RSJ Tampan asli)
+    // Red / Pink Geofencing Radius Circle (sesuai tampilan SIAP RSJ Tampan asli: 200m)
     const radiusCircle = L.circle(center, {
       color: '#e11d48',
       fillColor: '#f43f5e',
@@ -89,10 +99,9 @@ export default function TilokMap({
 
     // Titik Lokasi Resmi (Tilok) RS Jiwa Tampan
     const tilokMarker = L.marker(center).addTo(map);
-    tilokMarker.bindPopup("<b>RS Jiwa Tampan</b><br>Titik Lokasi (Tilok) Absensi Pegawai").openPopup();
+    tilokMarker.bindPopup("<b>RS Jiwa Tampan</b><br>Titik Lokasi (Tilok) Valid<br>Radius: ${currentRadius} meter").openPopup();
 
-    // User Current GPS Location (berada di dalam radius Tilok 14m)
-    const userPos = [${latitude + 0.0001}, ${longitude - 0.00008}];
+    // User GPS Location Marker
     const userIcon = L.divIcon({
       className: 'user-marker-wrap',
       html: '<div class="pulse-dot"></div>',
@@ -100,11 +109,21 @@ export default function TilokMap({
       iconAnchor: [7, 7]
     });
     const userMarker = L.marker(userPos, { icon: userIcon }).addTo(map);
-    userMarker.bindTooltip("Posisi Anda (${userDistance}m)", {
+    userMarker.bindTooltip("Posisi Anda (${actualUserDistance}m${isOutsideRadius ? ' - Di Luar Radius' : ''})", {
       permanent: true,
       direction: 'top',
       className: 'custom-label'
     });
+
+    ${isOutsideRadius ? `
+    // Garis penghubung ke Tilok jika di luar radius
+    const polyline = L.polyline([center, userPos], {
+      color: '#ea580c',
+      weight: 2,
+      dashArray: '6, 6',
+      opacity: 0.8
+    }).addTo(map);
+    ` : ''}
   </script>
 </body>
 </html>
@@ -118,7 +137,7 @@ export default function TilokMap({
           <Text style={{ fontSize: 16 }}>📍</Text>
           <View>
             <Text style={mapStyles.title}>Peta Tilok & Radius Presensi</Text>
-            <Text style={mapStyles.subTitle}>RS Jiwa Tampan - Pekanbaru</Text>
+            <Text style={mapStyles.subTitle}>RS Jiwa Tampan (Lat: {latitude}, Long: {longitude})</Text>
           </View>
         </View>
         <View style={mapStyles.badgeRadius}>
@@ -127,10 +146,10 @@ export default function TilokMap({
       </View>
 
       {/* Interactive Leaflet Map Container */}
-      <View style={mapStyles.mapFrame}>
+      <View style={[mapStyles.mapFrame, { height }]}>
         {Platform.OS === 'web' ? (
           <iframe
-            key={`map-${currentRadius}-${mapZoom}`}
+            key={`map-${currentRadius}-${mapZoom}-${isOutsideRadius}-${actualUserDistance}`}
             title="Peta Radius Tilok RSJ Tampan"
             srcDoc={leafletHtml}
             style={{
@@ -152,59 +171,68 @@ export default function TilokMap({
         <View style={mapStyles.legendBox}>
           <View style={mapStyles.legendItem}>
             <View style={mapStyles.legendCircleRed} />
-            <Text style={mapStyles.legendText}>Radius Tilok</Text>
+            <Text style={mapStyles.legendText}>Radius Tilok ({currentRadius}m)</Text>
           </View>
           <View style={mapStyles.legendItem}>
-            <View style={mapStyles.legendDotBlue} />
-            <Text style={mapStyles.legendText}>Posisi Anda ({userDistance}m)</Text>
+            <View style={[mapStyles.legendDotBlue, isOutsideRadius && { backgroundColor: '#ea580c' }]} />
+            <Text style={mapStyles.legendText}>Posisi Anda ({actualUserDistance}m)</Text>
           </View>
         </View>
       </View>
 
       {/* Geofence Status Indicator */}
-      <View style={mapStyles.statusCard}>
+      <View style={[mapStyles.statusCard, isOutsideRadius && mapStyles.statusCardWarning]}>
         <View style={mapStyles.statusLeft}>
-          <View style={mapStyles.validIconWrap}>
-            <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '900' }}>✓</Text>
+          <View style={[mapStyles.validIconWrap, isOutsideRadius && mapStyles.warningIconWrap]}>
+            <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '900' }}>
+              {isOutsideRadius ? '!' : '✓'}
+            </Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={mapStyles.statusTitle}>Radius Tilok Terverifikasi (Valid)</Text>
-            <Text style={mapStyles.statusDesc}>
-              Jarak ke titik pusat: <Text style={{ fontWeight: '800', color: '#047857' }}>{userDistance} meter</Text> (Maks: {currentRadius}m)
+            <Text style={[mapStyles.statusTitle, isOutsideRadius && mapStyles.warningTitle]}>
+              {isOutsideRadius
+                ? 'Di Luar Radius Tilok (> 200m)'
+                : 'Radius Tilok Terverifikasi (Valid)'}
+            </Text>
+            <Text style={[mapStyles.statusDesc, isOutsideRadius && mapStyles.warningDesc]}>
+              Jarak ke titik pusat RSJ: <Text style={{ fontWeight: '800' }}>{actualUserDistance} meter</Text> (Maks: {currentRadius}m)
             </Text>
           </View>
         </View>
 
-        {/* Radius Selector Options */}
-        <View style={mapStyles.radiusChips}>
-          {[50, 100, 150].map((r) => (
-            <TouchableOpacity
-              key={r}
-              onPress={() => setCurrentRadius(r)}
-              style={[
-                mapStyles.chip,
-                currentRadius === r && mapStyles.chipActive,
-              ]}
-            >
-              <Text
+        {showControls && (
+          <View style={mapStyles.radiusChips}>
+            {[100, 200, 300].map((r) => (
+              <TouchableOpacity
+                key={r}
+                onPress={() => setCurrentRadius(r)}
                 style={[
-                  mapStyles.chipText,
-                  currentRadius === r && mapStyles.chipTextActive,
+                  mapStyles.chip,
+                  currentRadius === r && mapStyles.chipActive,
                 ]}
               >
-                {r}m
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+                <Text
+                  style={[
+                    mapStyles.chipText,
+                    currentRadius === r && mapStyles.chipTextActive,
+                  ]}
+                >
+                  {r}m {r === 200 ? '(Resmi)' : ''}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Koordinat & Akurasi GPS */}
       <View style={mapStyles.coordsRow}>
         <Text style={mapStyles.coordText}>
-          📍 Koordinat: {latitude}° N, {longitude}° E
+          📍 Titik Valid: {latitude}° N, {longitude}° E (200m)
         </Text>
-        <Text style={mapStyles.accuracyText}>Akurasi GPS: ±4m</Text>
+        <Text style={[mapStyles.accuracyText, isOutsideRadius && { color: '#ea580c' }]}>
+          {isOutsideRadius ? '⚠️ Status: Luar Radius' : '✓ Status: Dalam Tilok'}
+        </Text>
       </View>
     </View>
   );
@@ -331,6 +359,10 @@ const mapStyles = StyleSheet.create({
     padding: 10,
     marginTop: 10,
   },
+  statusCardWarning: {
+    backgroundColor: '#fff7ed',
+    borderColor: '#fed7aa',
+  },
   statusLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -344,15 +376,24 @@ const mapStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  warningIconWrap: {
+    backgroundColor: '#ea580c',
+  },
   statusTitle: {
     fontSize: 12,
     fontWeight: '800',
     color: '#065f46',
   },
+  warningTitle: {
+    color: '#c2410c',
+  },
   statusDesc: {
     fontSize: 10.5,
     color: '#047857',
     marginTop: 1,
+  },
+  warningDesc: {
+    color: '#9a3412',
   },
   radiusChips: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from '../theme';
 import TilokMap from '../components/TilokMap';
 import FaceRecognitionModal from '../components/FaceRecognitionModal';
@@ -16,11 +16,15 @@ export default function AttendanceScreen({
   onCloseModal,
   onSubmit,
   onSwitchMode,
+  onNavigateToPdt,
   onBack,
 }) {
   const isDording = mode === 'dording';
   const [activeType, setActiveType] = useState(attendanceType || 'masuk');
   const [dordingPattern, setDordingPattern] = useState('pagi_siang'); // 'pagi_siang' | 'siang_malam' | 'malam_pagi'
+  const [userDistance, setUserDistance] = useState(14); // meter dari titik tilok resmi
+  const [geofenceAlertVisible, setGeofenceAlertVisible] = useState(false);
+  const [pendingType, setPendingType] = useState('masuk');
 
   // Definisi 3 Pola Presensi Dording (Sesuai Infografis Resmi RSJ Tampan)
   const DORDING_CONFIG = {
@@ -169,6 +173,12 @@ export default function AttendanceScreen({
 
   const handleOpenAbsen = (type) => {
     setActiveType(type);
+    if (userDistance > 200) {
+      // User berada di luar radius Tilok resmi (200m)
+      setPendingType(type);
+      setGeofenceAlertVisible(true);
+      return;
+    }
     if (onOpenModal) onOpenModal(type);
   };
 
@@ -314,14 +324,75 @@ export default function AttendanceScreen({
           </View>
         )}
 
-        {/* Peta Interaktif Tilok & Radius Geofencing (Leaflet & OpenStreetMap) */}
+        {/* Peta Interaktif Tilok & Radius Geofencing Resmi (Foto 2: Lat 0.465791, Long 101.381957, Radius 200m) */}
         <TilokMap
-          latitude={0.4738}
-          longitude={101.3826}
-          radius={100}
-          userDistance={14}
-          locationName="Gedung Instalasi RSJ Tampan - Pekanbaru"
+          latitude={0.465791}
+          longitude={101.381957}
+          radius={200}
+          userDistance={userDistance}
+          isOutsideRadius={userDistance > 200}
+          locationName="RS Jiwa Tampan - Pekanbaru"
         />
+
+        {/* Quick GPS Geofencing Switcher untuk Pengujian */}
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            backgroundColor: '#ffffff',
+            borderRadius: 12,
+            padding: 8,
+            marginBottom: 12,
+            borderWidth: 1,
+            borderColor: '#e2e8f0',
+          }}
+        >
+          <Text style={{ fontSize: 11, fontWeight: '700', color: '#475569' }}>
+            Simulasi Posisi GPS Pegawai:
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <TouchableOpacity
+              style={{
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 6,
+                backgroundColor: userDistance <= 200 ? '#059669' : '#f1f5f9',
+              }}
+              onPress={() => setUserDistance(14)}
+            >
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: '800',
+                  color: userDistance <= 200 ? '#ffffff' : '#64748b',
+                }}
+              >
+                🏢 Dalam Tilok (14m)
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 6,
+                backgroundColor: userDistance > 200 ? '#ea580c' : '#f1f5f9',
+              }}
+              onPress={() => setUserDistance(1150)}
+            >
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: '800',
+                  color: userDistance > 200 ? '#ffffff' : '#64748b',
+                }}
+              >
+                🚗 Luar Radius (1.1 km)
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Live Clock Card Sesuai Tampilan Asli SIAP RSJ Tampan */}
         <View style={styles.clockCard}>
@@ -1035,6 +1106,153 @@ export default function AttendanceScreen({
           onClose={onCloseModal}
           onSubmit={onSubmit}
         />
+
+        {/* Modal: Peringatan Geofencing Di Luar Radius Tilok */}
+        <Modal visible={geofenceAlertVisible} transparent animationType="fade">
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(15, 23, 42, 0.65)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 16,
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: '#ffffff',
+                borderRadius: 18,
+                padding: 20,
+                width: '100%',
+                maxWidth: 440,
+                borderWidth: 1,
+                borderColor: '#fed7aa',
+                ...(Platform.OS === 'web'
+                  ? { boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }
+                  : { elevation: 5 }),
+              }}
+            >
+              {/* Icon & Title */}
+              <View style={{ alignItems: 'center', marginBottom: 12 }}>
+                <View
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 26,
+                    backgroundColor: '#fff7ed',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderWidth: 2,
+                    borderColor: '#f97316',
+                    marginBottom: 8,
+                  }}
+                >
+                  <Text style={{ fontSize: 26 }}>⚠️</Text>
+                </View>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: '900',
+                    color: '#0f172a',
+                    textAlign: 'center',
+                  }}
+                >
+                  Di Luar Radius Titik Lokasi!
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: '700',
+                    color: '#c2410c',
+                    marginTop: 2,
+                  }}
+                >
+                  Jarak Anda: {userDistance}m (Maksimal Radius: 200m)
+                </Text>
+              </View>
+
+              {/* Description */}
+              <View
+                style={{
+                  backgroundColor: '#f8fafc',
+                  borderRadius: 10,
+                  padding: 12,
+                  marginBottom: 16,
+                  borderLeftWidth: 3,
+                  borderLeftColor: '#f97316',
+                }}
+              >
+                <Text style={{ fontSize: 11.5, color: '#334155', lineHeight: 17 }}>
+                  Titik resmi RS Jiwa Tampan berada di{' '}
+                  <Text style={{ fontWeight: '800' }}>Lat: 0.465791, Long: 101.381957</Text>.
+                  Karena posisi Anda berada di luar radius 200 meter, Anda tidak dapat melakukan presensi reguler di lokasi ini.
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    color: '#ea580c',
+                    fontWeight: '800',
+                    marginTop: 6,
+                  }}
+                >
+                  💡 Jika Anda masih di jalan menuju kantor atau sedang dinas luar, silakan gunakan menu Presensi Diluar Tilok (PDT) dengan menyertakan alasan & foto bukti perjalanan.
+                </Text>
+              </View>
+
+              {/* Buttons */}
+              <View style={{ gap: 8 }}>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#e11d48',
+                    paddingVertical: 12,
+                    borderRadius: 10,
+                    alignItems: 'center',
+                  }}
+                  onPress={() => {
+                    setGeofenceAlertVisible(false);
+                    if (onNavigateToPdt) onNavigateToPdt();
+                  }}
+                >
+                  <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 13 }}>
+                    🚗 Beralih ke Presensi Diluar Tilok (PDT) ➔
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#059669',
+                    paddingVertical: 10,
+                    borderRadius: 10,
+                    alignItems: 'center',
+                  }}
+                  onPress={() => {
+                    setUserDistance(14);
+                    setGeofenceAlertVisible(false);
+                    if (onOpenModal) onOpenModal(pendingType);
+                  }}
+                >
+                  <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 12 }}>
+                    🏢 Simulasi Dalam Tilok (14m) & Lanjut Absen
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#f1f5f9',
+                    paddingVertical: 9,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                  }}
+                  onPress={() => setGeofenceAlertVisible(false)}
+                >
+                  <Text style={{ color: '#64748b', fontWeight: '700', fontSize: 12 }}>
+                    Batal
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </ScrollView>
   );
