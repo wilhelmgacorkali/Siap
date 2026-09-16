@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "SIAP RSJ Tampan",
+    "slug": "siap-rsj-tampan",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"]
+  }
+}

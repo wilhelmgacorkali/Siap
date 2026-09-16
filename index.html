@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>SIAP - Sistem Informasi & Absensi Pegawai RSJ Tampan</title>
+  <meta name="description" content="Aplikasi Absensi Mobile Modern Berbasis Geofencing & Biometrik untuk Pegawai Rumah Sakit Jiwa Tampan">
+
+  <!-- Favicon / Brand Icon -->
+  <link rel="icon" type="image/svg+xml" href="assets/rsj_tampan_symbol_transparent.svg">
+
+  <!-- Leaflet CSS for Interactive Tilok Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+
+  <div class="simulator-wrapper">
+    <!-- Viewport Switcher (Desktop Monitor / Mobile Phone) -->
+    <div class="viewport-switcher-bar">
+      <div class="switcher-brand">
+        <img src="assets/rsj_tampan_symbol_transparent.svg" alt="RSJ Tampan" style="width: 22px; height: 22px;">
+        <span class="switcher-badge">RSJ TAMPAN</span>
+        <span>SIAP Sistem Absensi Pegawai</span>
+      </div>
+      <div class="switcher-buttons">
+        <button class="device-btn active" data-device="iphone">📱 Mobile View</button>
+        <button class="device-btn" data-device="fullscreen">🖥️ Desktop Monitor (Foto)</button>
+      </div>
+    </div>
+
+    <!-- Mobile Device Outer Shell -->
+    <div class="device-frame" id="device-frame">
+      <!-- iOS Dynamic Island -->
+      <div class="dynamic-island">
+        <div class="camera-lens"></div>
+        <div class="sensor-dot"></div>
+      </div>
+
+      <!-- Device Screen Viewport -->
+      <div class="device-screen">
+        <!-- iOS Status Bar -->
+        <div class="ios-status-bar">
+          <span id="top-status-time">10:38</span>
+          <div class="status-icons">
+            <span>5G</span>
+            <span>📶</span>
+            <span>🔋</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Container managed by src/app.js -->
+        <div class="app-container" id="app-container">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- iOS Bottom Home Indicator Bar -->
+        <div class="ios-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Confetti Celebration Effect -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Main App Script -->
+  <script src="src/app.js"></script>
+</body>
+</html>
