@@ -12,7 +12,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     maxWidth: 1280,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#090d16',
     overflow: 'hidden',
     position: 'relative',
     ...(Platform.OS === 'web' ? {
@@ -176,16 +176,16 @@ export const styles = StyleSheet.create({
     marginBottom: 6,
   },
 
-  // App Header
+  // App Header — Dark theme
   header: {
     height: 60,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#0f172a',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
     zIndex: 20,
   },
   headerLeft: {
@@ -196,48 +196,49 @@ export const styles = StyleSheet.create({
   menuButton: {
     paddingVertical: 7,
     paddingHorizontal: 10,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   menuText: {
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#ffffff',
     fontSize: 13,
   },
   backButton: {
     paddingVertical: 7,
     paddingHorizontal: 10,
-    backgroundColor: '#e0f2fe',
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#bae6fd',
+    borderColor: 'rgba(56, 189, 248, 0.3)',
   },
   backText: {
     fontWeight: '700',
-    color: '#0284c7',
+    color: '#38bdf8',
     fontSize: 12,
   },
   headerTitle: {
     fontSize: 14.5,
     fontWeight: '800',
-    color: '#0f172a',
+    color: '#ffffff',
   },
   notification: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
 
-  // Scroll and Page
+  // Scroll and Page — Dark
   scroll: {
     flex: 1,
+    backgroundColor: '#090d16',
   },
   page: {
     padding: 16,
@@ -307,12 +308,12 @@ export const styles = StyleSheet.create({
 
   // Daily Status Banner on Dashboard
   todayStatusCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(30, 41, 59, 0.7)',
     borderRadius: 16,
     padding: 14,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: 'rgba(255,255,255,0.1)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -352,40 +353,40 @@ export const styles = StyleSheet.create({
     marginLeft: 10,
   },
 
-  // Section Styles
+  // Section Styles — Dark
   section: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(30, 41, 59, 0.5)',
     borderRadius: 16,
     padding: 16,
     marginTop: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#0f172a',
+    color: '#ffffff',
     marginBottom: 10,
   },
   day: {
     width: 44,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     marginRight: 8,
   },
   today: {
-    borderColor: '#0284c7',
-    backgroundColor: '#e0f2fe',
+    borderColor: '#38bdf8',
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
     borderWidth: 1.5,
   },
   dayNumber: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#475569',
+    color: '#cbd5e1',
   },
   shift: {
     width: 24,
@@ -401,52 +402,52 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  // Attendance Screen
+  // Attendance Screen — Dark
   banner: {
-    backgroundColor: '#ecfdf5',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
     borderLeftWidth: 4,
     borderLeftColor: '#10b981',
     padding: 14,
     borderRadius: 10,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#a7f3d0',
+    borderColor: 'rgba(16, 185, 129, 0.2)',
   },
   bannerDording: {
-    backgroundColor: '#fffbeb',
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
     borderLeftColor: '#f59e0b',
-    borderColor: '#fde68a',
+    borderColor: 'rgba(245, 158, 11, 0.2)',
   },
   bannerTitle: {
-    color: '#065f46',
+    color: '#34d399',
     fontWeight: '800',
     fontSize: 13.5,
   },
   bannerSub: {
-    color: '#047857',
+    color: '#6ee7b7',
     fontSize: 11.5,
     marginTop: 3,
   },
   map: {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: 'rgba(30, 41, 59, 0.5)',
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   mapText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#e2e8f0',
     marginTop: 4,
   },
   geo: {
-    backgroundColor: '#ecfdf5',
-    color: '#059669',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    color: '#34d399',
     borderWidth: 1,
-    borderColor: '#10b981',
+    borderColor: 'rgba(16, 185, 129, 0.3)',
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 8,
@@ -455,24 +456,24 @@ export const styles = StyleSheet.create({
     marginTop: 6,
   },
   clockCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(30, 41, 59, 0.7)',
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   bigClock: {
     fontSize: 32,
     fontWeight: '900',
-    color: '#0f172a',
+    color: '#ffffff',
     fontFamily: 'monospace',
     letterSpacing: 1,
   },
   muted: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#94a3b8',
     marginTop: 2,
     fontWeight: '600',
   },
@@ -490,13 +491,13 @@ export const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 12.5,
-    color: '#475569',
+    color: '#94a3b8',
     marginVertical: 4,
   },
   label: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#334155',
+    color: '#cbd5e1',
     marginBottom: 5,
   },
   primaryButton: {
