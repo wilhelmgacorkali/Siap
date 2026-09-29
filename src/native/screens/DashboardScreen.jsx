@@ -145,8 +145,8 @@ export default function DashboardScreen({ user, currentTime, attendance = {}, do
             <View style={[s.dividerGlass, { backgroundColor: theme.border }]} />
 
             <View style={s.statusContentRow}>
-              <View>
-                <Text style={[s.statusLabel, { color: theme.textSub }]}>Hari Ini, {realtimeDate}</Text>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={[s.statusLabel, { color: theme.textSub }]} numberOfLines={1}>Hari Ini, {realtimeDate}</Text>
                 <Text style={[s.statusValue, { color: isPulang ? '#34d399' : isMasuk ? '#38bdf8' : '#fbbf24' }]}>
                   {isPulang ? 'Tuntas' : isMasuk ? 'Sedang Dinas' : 'Belum Absen'}
                 </Text>
