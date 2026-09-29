@@ -1,5 +1,37 @@
 import { StyleSheet, Platform } from 'react-native';
 
+export const DARK_THEME = {
+  bgMain: '#090d16',
+  bgHero: '#0f172a',
+  heroGradient: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0369a1 100%)',
+  textMain: '#ffffff',
+  textSub: '#94a3b8',
+  accent: '#38bdf8',
+  cardBg: 'rgba(30, 41, 59, 0.7)',
+  cardSolid: 'rgba(30, 41, 59, 0.5)',
+  border: 'rgba(255, 255, 255, 0.15)',
+  pillBg: 'rgba(255,255,255,0.08)',
+  cellBg: 'rgba(15, 23, 42, 0.6)',
+  overlay: 'rgba(2, 6, 23, 0.8)',
+  shadow: 'rgba(0,0,0,0.5)',
+};
+
+export const LIGHT_THEME = {
+  bgMain: '#f1f5f9',
+  bgHero: '#ffffff',
+  heroGradient: 'linear-gradient(135deg, #ffffff 0%, #e0f2fe 50%, #bae6fd 100%)',
+  textMain: '#0f172a',
+  textSub: '#64748b',
+  accent: '#0284c7',
+  cardBg: 'rgba(255, 255, 255, 0.95)',
+  cardSolid: '#ffffff',
+  border: 'rgba(0, 0, 0, 0.08)',
+  pillBg: '#e2e8f0',
+  cellBg: '#f8fafc',
+  overlay: 'rgba(0, 0, 0, 0.4)',
+  shadow: 'rgba(0,0,0,0.08)',
+};
+
 export const styles = StyleSheet.create({
   // Root App Container (Responsive: Mobile centered on Desktop)
   appBackground: {

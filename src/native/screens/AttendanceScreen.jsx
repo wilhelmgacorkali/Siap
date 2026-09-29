@@ -18,6 +18,8 @@ export default function AttendanceScreen({
   onSwitchMode,
   onNavigateToPdt,
   onBack,
+  isDarkMode = true,
+  theme,
 }) {
   const isDording = mode === 'dording';
   const [activeType, setActiveType] = useState(attendanceType || 'masuk');
@@ -190,7 +192,7 @@ export default function AttendanceScreen({
   }).format(new Date());
 
   return (
-    <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.scroll, theme && { backgroundColor: theme.bgMain }]} showsVerticalScrollIndicator={false}>
       <View style={styles.page}>
         {/* Tombol Pemilih Cepat: Presensi Shift 1 vs Presensi Dording Shift 2 */}
         <View

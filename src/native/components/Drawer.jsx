@@ -3,7 +3,7 @@ import { Animated, Image, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from '../theme';
 import { RSJ_LOGO_URI } from '../assets';
 
-export default function Drawer({ open, activeScreen, user, onClose, onNavigate, onLogout }) {
+export default function Drawer({ open, activeScreen, user, onClose, onNavigate, onLogout, isDarkMode = true, theme }) {
   const slideAnim = useRef(new Animated.Value(-290)).current;
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
       {/* Drawer Container */}
       <Animated.View
         pointerEvents={open ? 'auto' : 'none'}
-        style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}
+        style={[styles.drawer, theme && { backgroundColor: theme.bgHero || theme.bgMain }, { transform: [{ translateX: slideAnim }] }]}
       >
         {/* Drawer Header */}
         <View style={styles.drawerHeader}>

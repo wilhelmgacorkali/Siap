@@ -14,7 +14,7 @@ import AttendanceScreen from './screens/AttendanceScreen';
 import { ReportsScreen } from './screens/ReportsScreen';
 import PdtScreen from './screens/PdtScreen';
 import Drawer from './components/Drawer';
-import { styles } from './theme';
+import { styles, DARK_THEME, LIGHT_THEME } from './theme';
 import { RSJ_LOGO_URI } from './assets';
 
 export default function App() {
@@ -25,6 +25,8 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [attendanceType, setAttendanceType] = useState('masuk');
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const theme = isDarkMode ? DARK_THEME : LIGHT_THEME;
   const [attendance, setAttendance] = useState({
     sekarang: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
     dording: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
@@ -120,19 +122,19 @@ export default function App() {
       : screen;
 
   return (
-    <SafeAreaView style={styles.appBackground}>
-      <View style={styles.appContainer}>
-        <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.appBackground, { backgroundColor: theme.bgMain }]}>
+      <View style={[styles.appContainer, { backgroundColor: theme.bgMain }]}>
+        <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
 
         {/* Global App Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: theme.bgHero, borderBottomColor: theme.border }]}>
           <View style={styles.headerLeft}>
             <TouchableOpacity
-              style={styles.menuButton}
+              style={[styles.menuButton, { backgroundColor: theme.pillBg, borderColor: theme.border }]}
               activeOpacity={0.7}
               onPress={() => setDrawerOpen(true)}
             >
-              <Text style={styles.menuText}>☰ Menu</Text>
+              <Text style={[styles.menuText, { color: theme.textMain }]}>☰ Menu</Text>
             </TouchableOpacity>
 
             {/* Back Button if not on dashboard */}
@@ -154,11 +156,11 @@ export default function App() {
                 style={{ width: 22, height: 22, resizeMode: 'contain' }}
               />
             )}
-            <Text style={styles.headerTitle}>{getScreenTitle()}</Text>
+            <Text style={[styles.headerTitle, { color: theme.textMain }]}>{getScreenTitle()}</Text>
           </View>
 
           <TouchableOpacity
-            style={styles.notification}
+            style={[styles.notification, { backgroundColor: theme.pillBg, borderColor: theme.border }]}
             activeOpacity={0.7}
             onPress={() => Alert.alert('Notifikasi', 'Tidak ada notifikasi penting saat ini.')}
           >
@@ -167,7 +169,7 @@ export default function App() {
         </View>
 
         {/* Main Content Area */}
-        <View style={{ flex: 1, position: 'relative' }}>
+        <View style={{ flex: 1, position: 'relative', backgroundColor: theme.bgMain }}>
           {screen === 'dashboard' && (
             <DashboardScreen
               user={user}
@@ -175,6 +177,8 @@ export default function App() {
               attendance={attendance.sekarang}
               dordingAttendance={attendance.dording}
               onNavigate={navigate}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
             />
           )}
 
@@ -187,6 +191,8 @@ export default function App() {
               allAttendance={attendance}
               modalVisible={modalVisible}
               attendanceType={attendanceType}
+              isDarkMode={isDarkMode}
+              theme={theme}
               onOpenModal={(type) => {
                 setAttendanceType(type);
                 setModalVisible(true);
@@ -204,6 +210,8 @@ export default function App() {
               user={user}
               attendance={attendance}
               currentTime={currentTime}
+              isDarkMode={isDarkMode}
+              theme={theme}
               onBack={() => setScreen('dashboard')}
             />
           )}
@@ -213,6 +221,8 @@ export default function App() {
               user={user}
               currentTime={currentTime}
               attendance={attendance}
+              isDarkMode={isDarkMode}
+              theme={theme}
               onUpdatePdtAttendance={handleUpdatePdtAttendance}
               onBack={() => setScreen('dashboard')}
             />
@@ -224,6 +234,8 @@ export default function App() {
           open={drawerOpen}
           activeScreen={activeNavKey}
           user={user}
+          isDarkMode={isDarkMode}
+          theme={theme}
           onClose={() => setDrawerOpen(false)}
           onNavigate={navigate}
           onLogout={handleLogout}

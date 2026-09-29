@@ -30,6 +30,8 @@ export default function PdtScreen({
   attendance,
   onUpdatePdtAttendance,
   onBack,
+  isDarkMode = true,
+  theme,
 }) {
   // Waktu digital lokal jika prop kosong
   const [liveClock, setLiveClock] = useState(() => {
@@ -226,7 +228,7 @@ export default function PdtScreen({
   };
 
   return (
-    <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.scroll, theme && { backgroundColor: theme.bgMain }]} showsVerticalScrollIndicator={false}>
       <View style={styles.page}>
         {/* Breadcrumb & Screen Title Sesuai Screenshot 1 */}
         <View style={styles.headerBar}>

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { styles } from '../theme';
 
-export function ReportsScreen({ user, attendance = {}, onBack, currentTime }) {
+export function ReportsScreen({ user, attendance = {}, onBack, currentTime, isDarkMode = true, theme }) {
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'reguler' | 'dording' | 'late'
   const [selectedProofLog, setSelectedProofLog] = useState(null);
   const [liveTime, setLiveTime] = useState('');
@@ -233,7 +233,7 @@ export function ReportsScreen({ user, attendance = {}, onBack, currentTime }) {
   };
 
   return (
-    <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.scroll, theme && { backgroundColor: theme.bgMain }]} showsVerticalScrollIndicator={false}>
       <View style={styles.page}>
         {/* Banner */}
         <View style={styles.banner}>

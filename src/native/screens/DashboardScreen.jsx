@@ -9,6 +9,8 @@ import {
   View,
 } from 'react-native';
 
+import { DARK_THEME, LIGHT_THEME } from '../theme';
+
 const SHIFT_TYPES = {
   P: { code: 'P', label: 'Shift Pagi', time: '07:00 - 16:00', color: '#10b981', bg: '#ecfdf5', icon: '', desc: 'Masuk: 07:00 - 08:00 | Pulang: 14:00 - 16:00' },
   S: { code: 'S', label: 'Shift Sore', time: '13:00 - 21:00', color: '#0284c7', bg: '#e0f2fe', icon: '', desc: 'Presensi Masuk s/d 14:00' },
@@ -22,44 +24,23 @@ const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 const DAY_FULL_ID = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 const MONTHS_FULL_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
-const DARK_THEME = {
-  bgMain: '#090d16',
-  bgHero: '#0f172a',
-  heroGradient: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0369a1 100%)',
-  textMain: '#ffffff',
-  textSub: '#94a3b8',
-  accent: '#38bdf8',
-  cardBg: 'rgba(30, 41, 59, 0.7)',
-  cardSolid: 'rgba(30, 41, 59, 0.5)',
-  border: 'rgba(255, 255, 255, 0.15)',
-  pillBg: 'rgba(255,255,255,0.08)',
-  cellBg: 'rgba(15, 23, 42, 0.6)',
-  overlay: 'rgba(2, 6, 23, 0.8)',
-  shadow: 'rgba(0,0,0,0.5)',
-};
-
-const LIGHT_THEME = {
-  bgMain: '#f1f5f9',
-  bgHero: '#ffffff',
-  heroGradient: 'linear-gradient(135deg, #ffffff 0%, #e0f2fe 50%, #bae6fd 100%)',
-  textMain: '#0f172a',
-  textSub: '#64748b',
-  accent: '#0284c7',
-  cardBg: 'rgba(255, 255, 255, 0.95)',
-  cardSolid: '#ffffff',
-  border: 'rgba(0, 0, 0, 0.08)',
-  pillBg: '#e2e8f0',
-  cellBg: '#f8fafc',
-  overlay: 'rgba(0, 0, 0, 0.4)',
-  shadow: 'rgba(0,0,0,0.08)',
-};
-
-export default function DashboardScreen({ user, currentTime, attendance = {}, dordingAttendance = {}, onNavigate }) {
+export default function DashboardScreen({
+  user,
+  currentTime,
+  attendance = {},
+  dordingAttendance = {},
+  onNavigate,
+  isDarkMode = true,
+  onToggleDarkMode,
+}) {
   const isMasuk = !!attendance?.masuk;
   const isPulang = !!attendance?.pulang;
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [localIsDarkMode, setLocalIsDarkMode] = useState(true);
 
-  const theme = isDarkMode ? DARK_THEME : LIGHT_THEME;
+  const activeDarkMode = onToggleDarkMode ? isDarkMode : localIsDarkMode;
+  const toggleDarkMode = onToggleDarkMode || (() => setLocalIsDarkMode(!localIsDarkMode));
+
+  const theme = activeDarkMode ? DARK_THEME : LIGHT_THEME;
 
   const _now = new Date();
   const realtimeDate = DAY_FULL_ID[_now.getDay()] + ', ' + _now.getDate() + ' ' + MONTHS_FULL_ID[_now.getMonth()] + ' ' + _now.getFullYear();
@@ -110,13 +91,13 @@ export default function DashboardScreen({ user, currentTime, attendance = {}, do
               {/* Toggle Dark/Light */}
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => setIsDarkMode(!isDarkMode)}
+                onPress={toggleDarkMode}
                 style={[s.themeToggle, { backgroundColor: theme.pillBg, borderColor: theme.border }]}
               >
-                <View style={[s.themeToggleTrack, { backgroundColor: isDarkMode ? '#1e293b' : '#e2e8f0' }]}>
-                  <View style={[s.themeToggleThumb, isDarkMode ? s.thumbRight : s.thumbLeft, { backgroundColor: isDarkMode ? '#38bdf8' : '#f59e0b' }]} />
+                <View style={[s.themeToggleTrack, { backgroundColor: activeDarkMode ? '#1e293b' : '#e2e8f0' }]}>
+                  <View style={[s.themeToggleThumb, activeDarkMode ? s.thumbRight : s.thumbLeft, { backgroundColor: activeDarkMode ? '#38bdf8' : '#f59e0b' }]} />
                 </View>
-                <Text style={[s.themeToggleLabel, { color: theme.textMain }]}>{isDarkMode ? 'Gelap' : 'Terang'}</Text>
+                <Text style={[s.themeToggleLabel, { color: theme.textMain }]}>{activeDarkMode ? 'Gelap' : 'Terang'}</Text>
               </TouchableOpacity>
 
               <View style={[s.avatarContainer, { backgroundColor: theme.pillBg, borderColor: theme.border }]}>
