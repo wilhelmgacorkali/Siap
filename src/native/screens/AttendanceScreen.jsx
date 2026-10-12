@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Alert, Modal, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Alert, Modal, Platform, ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import * as Location from 'expo-location';
 import { styles } from '../theme';
 import TilokMap from '../components/TilokMap';
 import FaceRecognitionModal from '../components/FaceRecognitionModal';
@@ -22,11 +23,61 @@ export default function AttendanceScreen({
   theme,
 }) {
   const isDording = mode === 'dording';
+  const activeDarkMode = theme?.isDark ?? isDarkMode;
   const [activeType, setActiveType] = useState(attendanceType || 'masuk');
   const [dordingPattern, setDordingPattern] = useState('pagi_siang'); // 'pagi_siang' | 'siang_malam' | 'malam_pagi'
-  const [userDistance, setUserDistance] = useState(14); // meter dari titik tilok resmi
+  const [userDistance, setUserDistance] = useState(null); // meter dari titik tilok resmi (dihitung asli)
+  const [isLocating, setIsLocating] = useState(true);
   const [geofenceAlertVisible, setGeofenceAlertVisible] = useState(false);
   const [pendingType, setPendingType] = useState('masuk');
+
+  const TILOK_LAT = 0.465791;
+  const TILOK_LONG = 101.381957;
+
+  // Rumus Haversine untuk menghitung jarak dalam meter
+  const getDistanceFromLatLonInMeters = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3; // Radius bumi dalam meter
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; 
+  };
+
+  const fetchRealLocation = async () => {
+    setIsLocating(true);
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Izin Ditolak', 'Akses lokasi diperlukan untuk verifikasi Tilok.');
+        setIsLocating(false);
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const distance = getDistanceFromLatLonInMeters(
+        location.coords.latitude, 
+        location.coords.longitude, 
+        TILOK_LAT, 
+        TILOK_LONG
+      );
+      setUserDistance(distance);
+    } catch (error) {
+      Alert.alert('Gagal', 'Tidak dapat mengambil data lokasi perangkat Anda.');
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRealLocation();
+  }, []);
 
   // Definisi 3 Pola Presensi Dording (Sesuai Infografis Resmi RSJ Tampan)
   const DORDING_CONFIG = {
@@ -198,12 +249,12 @@ export default function AttendanceScreen({
         <View
           style={{
             flexDirection: 'row',
-            backgroundColor: '#ffffff',
+            backgroundColor: theme?.cardSolid || '#ffffff',
             borderRadius: 14,
             padding: 4,
             marginBottom: 12,
             borderWidth: 1,
-            borderColor: '#e2e8f0',
+            borderColor: theme?.border || '#e2e8f0',
             gap: 6,
           }}
         >
@@ -214,7 +265,7 @@ export default function AttendanceScreen({
               paddingHorizontal: 8,
               borderRadius: 10,
               alignItems: 'center',
-              backgroundColor: !isDording ? '#0284c7' : '#f8fafc',
+              backgroundColor: !isDording ? '#0284c7' : (theme?.pillBg || '#f8fafc'),
             }}
             onPress={() => onSwitchMode && onSwitchMode('sekarang')}
           >
@@ -222,15 +273,15 @@ export default function AttendanceScreen({
               style={{
                 fontSize: 12,
                 fontWeight: '800',
-                color: !isDording ? '#ffffff' : '#475569',
+                color: !isDording ? '#ffffff' : (theme?.textMain || '#475569'),
               }}
             >
               🟦 Presensi (Shift 1)
-            </Text>
+            </Text>x
             <Text
               style={{
                 fontSize: 10,
-                color: !isDording ? '#e0f2fe' : '#94a3b8',
+                color: !isDording ? '#e0f2fe' : (theme?.textSub || '#94a3b8'),
                 marginTop: 2,
                 fontWeight: '600',
               }}
@@ -246,7 +297,7 @@ export default function AttendanceScreen({
               paddingHorizontal: 8,
               borderRadius: 10,
               alignItems: 'center',
-              backgroundColor: isDording ? '#d97706' : '#f8fafc',
+              backgroundColor: isDording ? '#d97706' : (theme?.pillBg || '#f8fafc'),
             }}
             onPress={() => onSwitchMode && onSwitchMode('dording')}
           >
@@ -254,7 +305,7 @@ export default function AttendanceScreen({
               style={{
                 fontSize: 12,
                 fontWeight: '800',
-                color: isDording ? '#ffffff' : '#475569',
+                color: isDording ? '#ffffff' : (theme?.textMain || '#475569'),
               }}
             >
               🟨 Presensi Dording (Shift 2)
@@ -273,11 +324,38 @@ export default function AttendanceScreen({
         </View>
 
         {/* Banner with Mode Info */}
-        <View style={[styles.banner, isDording && styles.bannerDording]}>
-          <Text style={[styles.bannerTitle, isDording && { color: '#92400e' }]}>
+        <View
+          style={[
+            styles.banner,
+            {
+              backgroundColor: isDording
+                ? (activeDarkMode ? 'rgba(217, 119, 6, 0.2)' : '#fef3c7')
+                : (activeDarkMode ? 'rgba(16, 185, 129, 0.15)' : '#d1fae5'),
+              borderColor: isDording ? '#d97706' : '#10b981',
+              borderLeftColor: isDording ? '#f59e0b' : '#059669',
+            },
+          ]}
+        >
+          <Text
+            style={{
+              fontWeight: '900',
+              fontSize: 13.5,
+              color: isDording
+                ? (activeDarkMode ? '#fbbf24' : '#92400e')
+                : (activeDarkMode ? '#34d399' : '#065f46'),
+            }}
+          >
             🏥 {isDording ? `Presensi Dording (${currentCfg.label})` : 'Presensi Sekarang (Tilok RSJ Tampan)'}
           </Text>
-          <Text style={[styles.bannerSub, isDording && { color: '#b45309' }]}>
+          <Text
+            style={{
+              fontSize: 11.5,
+              marginTop: 3,
+              color: isDording
+                ? (activeDarkMode ? '#fde68a' : '#b45309')
+                : (activeDarkMode ? '#a7f3d0' : '#047857'),
+            }}
+          >
             {isDording
               ? 'Fitur presensi khusus dinas sambung/shift jaga rawat inap RSJ Tampan.'
               : 'Terverifikasi dalam radius Tilok Gedung RSJ Tampan (14 meter).'}
@@ -287,7 +365,14 @@ export default function AttendanceScreen({
         {/* Pilihan 3 Pola Dording (Hanya Muncul di Mode Dording) */}
         {isDording && (
           <View style={{ marginBottom: 14 }}>
-            <Text style={{ fontSize: 11.5, fontWeight: '800', color: '#475569', marginBottom: 6 }}>
+            <Text
+              style={{
+                fontSize: 11.5,
+                fontWeight: '800',
+                color: theme?.textSub || (activeDarkMode ? '#cbd5e1' : '#475569'),
+                marginBottom: 6,
+              }}
+            >
               🔄 Pilih Alur Peralihan Shift Dording:
             </Text>
             <View style={{ flexDirection: 'row', gap: 6 }}>
@@ -303,8 +388,10 @@ export default function AttendanceScreen({
                       paddingHorizontal: 6,
                       borderRadius: 8,
                       borderWidth: 1.5,
-                      borderColor: active ? '#d97706' : '#e2e8f0',
-                      backgroundColor: active ? '#fef3c7' : '#ffffff',
+                      borderColor: active ? '#d97706' : (theme?.borderSubtle || '#e2e8f0'),
+                      backgroundColor: active
+                        ? (activeDarkMode ? 'rgba(217, 119, 6, 0.25)' : '#fef3c7')
+                        : (theme?.cardSolid || '#ffffff'),
                       alignItems: 'center',
                     }}
                     onPress={() => setDordingPattern(key)}
@@ -313,7 +400,9 @@ export default function AttendanceScreen({
                       style={{
                         fontSize: 10.5,
                         fontWeight: '800',
-                        color: active ? '#92400e' : '#64748b',
+                        color: active
+                          ? (activeDarkMode ? '#fbbf24' : '#92400e')
+                          : (theme?.textSub || '#64748b'),
                         textAlign: 'center',
                       }}
                     >
@@ -336,73 +425,102 @@ export default function AttendanceScreen({
           locationName="RS Jiwa Tampan - Pekanbaru"
         />
 
-        {/* Quick GPS Geofencing Switcher untuk Pengujian */}
+        {/* Tombol Segarkan GPS */}
         <View
           style={{
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
-            backgroundColor: '#ffffff',
+            backgroundColor: theme?.cardSolid || '#ffffff',
             borderRadius: 12,
-            padding: 8,
+            padding: 10,
             marginBottom: 12,
             borderWidth: 1,
-            borderColor: '#e2e8f0',
+            borderColor: theme?.border || '#e2e8f0',
           }}
         >
-          <Text style={{ fontSize: 11, fontWeight: '700', color: '#475569' }}>
-            Simulasi Posisi GPS Pegawai:
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            <TouchableOpacity
-              style={{
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                borderRadius: 6,
-                backgroundColor: userDistance <= 200 ? '#059669' : '#f1f5f9',
-              }}
-              onPress={() => setUserDistance(14)}
-            >
-              <Text
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            {isLocating ? (
+              <ActivityIndicator size="small" color="#059669" />
+            ) : (
+              <View
                 style={{
-                  fontSize: 10,
-                  fontWeight: '800',
-                  color: userDistance <= 200 ? '#ffffff' : '#64748b',
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  backgroundColor: userDistance !== null && userDistance <= 200 ? '#059669' : '#ea580c',
                 }}
-              >
-                🏢 Dalam Tilok (14m)
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                borderRadius: 6,
-                backgroundColor: userDistance > 200 ? '#ea580c' : '#f1f5f9',
-              }}
-              onPress={() => setUserDistance(1150)}
-            >
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontWeight: '800',
-                  color: userDistance > 200 ? '#ffffff' : '#64748b',
-                }}
-              >
-                🚗 Luar Radius (1.1 km)
-              </Text>
-            </TouchableOpacity>
+              />
+            )}
+            <Text style={{ fontSize: 11, fontWeight: '700', color: theme?.textSub || '#475569' }}>
+              {isLocating
+                ? 'Mencari sinyal GPS...'
+                : userDistance !== null
+                ? `Jarak: ${Math.round(userDistance)}m dari Tilok Resmi`
+                : 'Lokasi tidak diketahui'}
+            </Text>
           </View>
+
+          <TouchableOpacity
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 8,
+              backgroundColor: theme?.pillBg || '#f1f5f9',
+            }}
+            onPress={fetchRealLocation}
+            disabled={isLocating}
+          >
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: '800',
+                color: theme?.textMain || '#0f172a',
+              }}
+            >
+              🔄 Segarkan
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Live Clock Card Sesuai Tampilan Asli SIAP RSJ Tampan */}
-        <View style={styles.clockCard}>
-          <Text style={styles.bigClock}>{currentTime || '10:38:50'}</Text>
-          <Text style={{ fontSize: 13, fontWeight: '700', color: '#334155', marginTop: 2 }}>
+        <View
+          style={[
+            styles.clockCard,
+            {
+              backgroundColor: theme?.cardSolid || '#1e293b',
+              borderColor: theme?.border || '#cbd5e1',
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.bigClock,
+              { color: theme?.clockText || (activeDarkMode ? '#38bdf8' : '#0284c7') },
+            ]}
+          >
+            {currentTime || '10:38:50'}
+          </Text>
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: '700',
+              color: theme?.textSub || (activeDarkMode ? '#cbd5e1' : '#334155'),
+              marginTop: 2,
+            }}
+          >
             {todayIndonesianDate}
           </Text>
-          <Text style={[styles.muted, { fontSize: 11, marginTop: 1 }]}>
+          <Text
+            style={[
+              styles.muted,
+              {
+                fontSize: 11,
+                marginTop: 1,
+                color: theme?.textMuted || (activeDarkMode ? '#94a3b8' : '#64748b'),
+              },
+            ]}
+          >
             Waktu Indonesia Barat (WIB)
           </Text>
         </View>
@@ -430,9 +548,9 @@ export default function AttendanceScreen({
             {/* Kotak Nilai Jam & Persentase Sesuai Sistem Asli RSJ Tampan */}
             <View
               style={{
-                backgroundColor: '#ffffff',
+                backgroundColor: theme?.cardSolid || (activeDarkMode ? '#1e293b' : '#ffffff'),
                 borderWidth: 1.5,
-                borderColor: masukScore ? masukScore.borderColor : '#e2e8f0',
+                borderColor: masukScore ? masukScore.borderColor : (theme?.border || '#e2e8f0'),
                 borderRadius: 14,
                 padding: 10,
                 alignItems: 'center',
@@ -446,7 +564,9 @@ export default function AttendanceScreen({
                   fontSize: 12.5,
                   fontFamily: 'monospace',
                   fontWeight: '800',
-                  color: attendance?.masuk ? '#0f172a' : '#94a3b8',
+                  color: attendance?.masuk
+                    ? (theme?.textMain || (activeDarkMode ? '#ffffff' : '#0f172a'))
+                    : (theme?.textMuted || '#94a3b8'),
                 }}
               >
                 {attendance?.masuk ? `2026-09-16 ${attendance.masuk}` : '--:--:--'}
@@ -468,7 +588,7 @@ export default function AttendanceScreen({
                     paddingHorizontal: 10,
                     paddingVertical: 2,
                     borderRadius: 6,
-                    backgroundColor: '#ffffff',
+                    backgroundColor: theme?.cellBg || (activeDarkMode ? '#0f172a' : '#ffffff'),
                   }}
                 >
                   <Text
@@ -485,7 +605,9 @@ export default function AttendanceScreen({
                   style={{
                     fontSize: 12,
                     fontWeight: '800',
-                    color: attendance?.masuk ? '#0f172a' : '#64748b',
+                    color: attendance?.masuk
+                      ? (theme?.textMain || (activeDarkMode ? '#ffffff' : '#0f172a'))
+                      : (theme?.textSub || '#64748b'),
                   }}
                 >
                   {masukScore ? masukScore.potongan || '0.00%' : '0.00%'}
@@ -497,7 +619,7 @@ export default function AttendanceScreen({
                 style={{
                   fontSize: 10,
                   fontWeight: '700',
-                  color: masukScore ? masukScore.color : '#94a3b8',
+                  color: masukScore ? masukScore.color : (theme?.textMuted || '#94a3b8'),
                   marginTop: 4,
                   textAlign: 'center',
                 }}
@@ -515,7 +637,7 @@ export default function AttendanceScreen({
                     marginTop: 6,
                     paddingTop: 6,
                     borderTopWidth: 1,
-                    borderTopColor: '#f1f5f9',
+                    borderTopColor: theme?.borderSubtle || '#f1f5f9',
                   }}
                 >
                   <Text style={{ fontSize: 10 }}>📷</Text>
@@ -548,9 +670,9 @@ export default function AttendanceScreen({
             {/* Kotak Nilai Jam & Persentase Pulang */}
             <View
               style={{
-                backgroundColor: '#ffffff',
+                backgroundColor: theme?.cardSolid || (activeDarkMode ? '#1e293b' : '#ffffff'),
                 borderWidth: 1.5,
-                borderColor: pulangScore ? pulangScore.borderColor : '#e2e8f0',
+                borderColor: pulangScore ? pulangScore.borderColor : (theme?.border || '#e2e8f0'),
                 borderRadius: 14,
                 padding: 10,
                 alignItems: 'center',
@@ -564,7 +686,9 @@ export default function AttendanceScreen({
                   fontSize: 12.5,
                   fontFamily: 'monospace',
                   fontWeight: '800',
-                  color: attendance?.pulang ? '#0f172a' : '#94a3b8',
+                  color: attendance?.pulang
+                    ? (theme?.textMain || (activeDarkMode ? '#ffffff' : '#0f172a'))
+                    : (theme?.textMuted || '#94a3b8'),
                 }}
               >
                 {attendance?.pulang ? `2026-09-16 ${attendance.pulang}` : '--:--:--'}
@@ -586,7 +710,7 @@ export default function AttendanceScreen({
                     paddingHorizontal: 10,
                     paddingVertical: 2,
                     borderRadius: 6,
-                    backgroundColor: '#ffffff',
+                    backgroundColor: theme?.cellBg || (activeDarkMode ? '#0f172a' : '#ffffff'),
                   }}
                 >
                   <Text
@@ -603,7 +727,9 @@ export default function AttendanceScreen({
                   style={{
                     fontSize: 12,
                     fontWeight: '800',
-                    color: attendance?.pulang ? '#0f172a' : '#1e293b',
+                    color: attendance?.pulang
+                      ? (theme?.textMain || (activeDarkMode ? '#ffffff' : '#0f172a'))
+                      : (theme?.textSub || '#1e293b'),
                   }}
                 >
                   {pulangScore ? pulangScore.potongan || '0.00%' : '0%'}
@@ -615,7 +741,7 @@ export default function AttendanceScreen({
                 style={{
                   fontSize: 10,
                   fontWeight: '700',
-                  color: pulangScore ? pulangScore.color : '#94a3b8',
+                  color: pulangScore ? pulangScore.color : (theme?.textMuted || '#94a3b8'),
                   marginTop: 4,
                   textAlign: 'center',
                 }}
@@ -637,7 +763,7 @@ export default function AttendanceScreen({
                     marginTop: 6,
                     paddingTop: 6,
                     borderTopWidth: 1,
-                    borderTopColor: '#f1f5f9',
+                    borderTopColor: theme?.borderSubtle || '#f1f5f9',
                   }}
                 >
                   <Text style={{ fontSize: 10 }}>📷</Text>
@@ -653,10 +779,10 @@ export default function AttendanceScreen({
         {/* Tabel Informasi Shift & Ketentuan Waktu (Sesuai Monitor SIAP RSJ Tampan) */}
         <View
           style={{
-            backgroundColor: '#ffffff',
+            backgroundColor: theme?.cardSolid || (activeDarkMode ? '#1e293b' : '#ffffff'),
             borderRadius: 12,
             borderWidth: 1.5,
-            borderColor: '#e2e8f0',
+            borderColor: theme?.border || '#cbd5e1',
             overflow: 'hidden',
             marginBottom: 16,
             ...(Platform.OS === 'web' ? { boxShadow: '0 2px 8px rgba(0,0,0,0.04)' } : {}),
@@ -667,12 +793,18 @@ export default function AttendanceScreen({
             style={{
               flexDirection: 'row',
               borderBottomWidth: 1,
-              borderBottomColor: '#f1f5f9',
+              borderBottomColor: theme?.borderSubtle || '#f1f5f9',
               alignItems: 'center',
             }}
           >
             <View style={{ flex: 1, paddingVertical: 16, paddingHorizontal: 16 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: '#1e293b' }}>
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: '700',
+                  color: theme?.textMain || (activeDarkMode ? '#ffffff' : '#0f172a'),
+                }}
+              >
                 Jenis Absen
               </Text>
             </View>
@@ -684,7 +816,7 @@ export default function AttendanceScreen({
                   borderRadius: 10,
                   paddingVertical: 7,
                   paddingHorizontal: 18,
-                  backgroundColor: '#ffffff',
+                  backgroundColor: theme?.cellBg || (activeDarkMode ? '#0f172a' : '#ffffff'),
                 }}
               >
                 <Text
@@ -706,12 +838,18 @@ export default function AttendanceScreen({
             style={{
               flexDirection: 'row',
               borderBottomWidth: 1,
-              borderBottomColor: '#f1f5f9',
+              borderBottomColor: theme?.borderSubtle || '#f1f5f9',
               alignItems: 'center',
             }}
           >
             <View style={{ flex: 1, paddingVertical: 18, paddingHorizontal: 16 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: '#1e293b' }}>
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: '700',
+                  color: theme?.textMain || (activeDarkMode ? '#ffffff' : '#0f172a'),
+                }}
+              >
                 Jam Absen Masuk
               </Text>
             </View>
@@ -723,7 +861,7 @@ export default function AttendanceScreen({
                   borderRadius: 10,
                   paddingVertical: 8,
                   paddingHorizontal: 16,
-                  backgroundColor: '#ffffff',
+                  backgroundColor: theme?.cellBg || (activeDarkMode ? '#0f172a' : '#ffffff'),
                   alignItems: 'center',
                   minWidth: 120,
                 }}
@@ -772,7 +910,13 @@ export default function AttendanceScreen({
             }}
           >
             <View style={{ flex: 1, paddingVertical: 18, paddingHorizontal: 16 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: '#1e293b' }}>
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: '700',
+                  color: theme?.textMain || (activeDarkMode ? '#ffffff' : '#0f172a'),
+                }}
+              >
                 Jam Absen Pulang
               </Text>
             </View>
@@ -784,7 +928,7 @@ export default function AttendanceScreen({
                   borderRadius: 10,
                   paddingVertical: 8,
                   paddingHorizontal: 16,
-                  backgroundColor: '#ffffff',
+                  backgroundColor: theme?.cellBg || (activeDarkMode ? '#0f172a' : '#ffffff'),
                   alignItems: 'center',
                   minWidth: 120,
                 }}
@@ -829,10 +973,10 @@ export default function AttendanceScreen({
         {/* Card Teknis Presensi Dording (Sesuai Infografis Resmi RSJ Tampan) */}
         <View
           style={{
-            backgroundColor: '#ffffff',
+            backgroundColor: theme?.cardSolid || (activeDarkMode ? '#1e293b' : '#ffffff'),
             borderRadius: 14,
             borderWidth: 1.5,
-            borderColor: '#cbd5e1',
+            borderColor: theme?.border || '#cbd5e1',
             padding: 14,
             marginBottom: 16,
             ...(Platform.OS === 'web' ? { boxShadow: '0 4px 12px rgba(0,0,0,0.04)' } : {}),
@@ -846,22 +990,59 @@ export default function AttendanceScreen({
               marginBottom: 6,
             }}
           >
-            <Text style={{ fontSize: 13.5, fontWeight: '900', color: '#0f172a' }}>
+            <Text
+              style={{
+                fontSize: 13.5,
+                fontWeight: '900',
+                color: theme?.textMain || (activeDarkMode ? '#ffffff' : '#0f172a'),
+              }}
+            >
               ⚡ Teknis Presensi Dording
             </Text>
             <View style={{ flexDirection: 'row', gap: 6 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#0284c7' }} />
-                <Text style={{ fontSize: 10, fontWeight: '700', color: '#64748b' }}>Shift 1</Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: '700',
+                    color: theme?.textSub || '#64748b',
+                  }}
+                >
+                  Shift 1
+                </Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#d97706' }} />
-                <Text style={{ fontSize: 10, fontWeight: '700', color: '#64748b' }}>Shift 2</Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: '700',
+                    color: theme?.textSub || '#64748b',
+                  }}
+                >
+                  Shift 2
+                </Text>
               </View>
             </View>
           </View>
-          <Text style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>
-            Urutan langkah presensi untuk alur <Text style={{ fontWeight: '800', color: '#0f172a' }}>{currentCfg.label}</Text>:
+          <Text
+            style={{
+              fontSize: 11,
+              color: theme?.textSub || (activeDarkMode ? '#cbd5e1' : '#64748b'),
+              marginBottom: 12,
+            }}
+          >
+            Urutan langkah presensi untuk alur{' '}
+            <Text
+              style={{
+                fontWeight: '800',
+                color: theme?.textMain || (activeDarkMode ? '#38bdf8' : '#0284c7'),
+              }}
+            >
+              {currentCfg.label}
+            </Text>
+            :
           </Text>
 
           {/* 4 Langkah Presensi */}
@@ -873,9 +1054,11 @@ export default function AttendanceScreen({
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: s1Masuk ? '#f0fdf4' : '#f8fafc',
+                backgroundColor: s1Masuk
+                  ? (activeDarkMode ? 'rgba(5, 150, 105, 0.2)' : '#f0fdf4')
+                  : (theme?.cellBg || (activeDarkMode ? '#0f172a' : '#f8fafc')),
                 borderWidth: 1,
-                borderColor: s1Masuk ? '#86efac' : '#e2e8f0',
+                borderColor: s1Masuk ? '#16a34a' : (theme?.borderSubtle || '#e2e8f0'),
                 borderRadius: 10,
                 padding: 10,
                 gap: 10,
@@ -894,11 +1077,18 @@ export default function AttendanceScreen({
                 <Text style={{ color: '#ffffff', fontWeight: '900', fontSize: 12 }}>1</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '800', color: '#1e293b' }}>
+                <Text
+                  style={{
+                    fontSize: 11.5,
+                    fontWeight: '800',
+                    color: theme?.textMain || (activeDarkMode ? '#ffffff' : '#0f172a'),
+                  }}
+                >
                   Absen Masuk {currentCfg.shift1Name}
                 </Text>
-                <Text style={{ fontSize: 10.5, color: '#64748b' }}>
-                  Waktu: {currentCfg.step1Time} • Tombol: <Text style={{ color: '#0284c7', fontWeight: '800' }}>Presensi (Biru)</Text>
+                <Text style={{ fontSize: 10.5, color: theme?.textSub || '#64748b' }}>
+                  Waktu: {currentCfg.step1Time} • Tombol:{' '}
+                  <Text style={{ color: '#0284c7', fontWeight: '800' }}>Presensi (Biru)</Text>
                 </Text>
               </View>
               <View
@@ -906,14 +1096,14 @@ export default function AttendanceScreen({
                   paddingHorizontal: 8,
                   paddingVertical: 3,
                   borderRadius: 6,
-                  backgroundColor: s1Masuk ? '#dcfce7' : '#f1f5f9',
+                  backgroundColor: s1Masuk ? '#dcfce7' : (theme?.pillBg || '#f1f5f9'),
                 }}
               >
                 <Text
                   style={{
                     fontSize: 10,
                     fontWeight: '800',
-                    color: s1Masuk ? '#15803d' : '#94a3b8',
+                    color: s1Masuk ? '#15803d' : (theme?.textMuted || '#94a3b8'),
                   }}
                 >
                   {s1Masuk ? `✓ Selesai (${s1Masuk})` : '⏳ Belum'}
@@ -928,9 +1118,11 @@ export default function AttendanceScreen({
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: s2Masuk ? '#f0fdf4' : '#f8fafc',
+                backgroundColor: s2Masuk
+                  ? (activeDarkMode ? 'rgba(5, 150, 105, 0.2)' : '#f0fdf4')
+                  : (theme?.cellBg || (activeDarkMode ? '#0f172a' : '#f8fafc')),
                 borderWidth: 1,
-                borderColor: s2Masuk ? '#86efac' : '#e2e8f0',
+                borderColor: s2Masuk ? '#16a34a' : (theme?.borderSubtle || '#e2e8f0'),
                 borderRadius: 10,
                 padding: 10,
                 gap: 10,
@@ -949,11 +1141,18 @@ export default function AttendanceScreen({
                 <Text style={{ color: '#ffffff', fontWeight: '900', fontSize: 12 }}>2</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '800', color: '#1e293b' }}>
+                <Text
+                  style={{
+                    fontSize: 11.5,
+                    fontWeight: '800',
+                    color: theme?.textMain || (activeDarkMode ? '#ffffff' : '#0f172a'),
+                  }}
+                >
                   Absen Masuk {currentCfg.shift2Name}
                 </Text>
-                <Text style={{ fontSize: 10.5, color: '#64748b' }}>
-                  Waktu: {currentCfg.step2Time} • Tombol: <Text style={{ color: '#d97706', fontWeight: '800' }}>Presensi Dording (Kuning)</Text>
+                <Text style={{ fontSize: 10.5, color: theme?.textSub || '#64748b' }}>
+                  Waktu: {currentCfg.step2Time} • Tombol:{' '}
+                  <Text style={{ color: '#d97706', fontWeight: '800' }}>Presensi Dording (Kuning)</Text>
                 </Text>
               </View>
               <View
@@ -961,14 +1160,14 @@ export default function AttendanceScreen({
                   paddingHorizontal: 8,
                   paddingVertical: 3,
                   borderRadius: 6,
-                  backgroundColor: s2Masuk ? '#dcfce7' : '#f1f5f9',
+                  backgroundColor: s2Masuk ? '#dcfce7' : (theme?.pillBg || '#f1f5f9'),
                 }}
               >
                 <Text
                   style={{
                     fontSize: 10,
                     fontWeight: '800',
-                    color: s2Masuk ? '#15803d' : '#94a3b8',
+                    color: s2Masuk ? '#15803d' : (theme?.textMuted || '#94a3b8'),
                   }}
                 >
                   {s2Masuk ? `✓ Selesai (${s2Masuk})` : '⏳ Belum'}
@@ -983,9 +1182,11 @@ export default function AttendanceScreen({
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: s1Pulang ? '#f0fdf4' : '#f8fafc',
+                backgroundColor: s1Pulang
+                  ? (activeDarkMode ? 'rgba(5, 150, 105, 0.2)' : '#f0fdf4')
+                  : (theme?.cellBg || (activeDarkMode ? '#0f172a' : '#f8fafc')),
                 borderWidth: 1,
-                borderColor: s1Pulang ? '#86efac' : '#e2e8f0',
+                borderColor: s1Pulang ? '#16a34a' : (theme?.borderSubtle || '#e2e8f0'),
                 borderRadius: 10,
                 padding: 10,
                 gap: 10,
@@ -1004,11 +1205,18 @@ export default function AttendanceScreen({
                 <Text style={{ color: '#ffffff', fontWeight: '900', fontSize: 12 }}>3</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '800', color: '#1e293b' }}>
+                <Text
+                  style={{
+                    fontSize: 11.5,
+                    fontWeight: '800',
+                    color: theme?.textMain || (activeDarkMode ? '#ffffff' : '#0f172a'),
+                  }}
+                >
                   Absen Pulang {currentCfg.shift1Name}
                 </Text>
-                <Text style={{ fontSize: 10.5, color: '#64748b' }}>
-                  Waktu: {currentCfg.step3Time} • Tombol: <Text style={{ color: '#0284c7', fontWeight: '800' }}>Presensi (Biru)</Text>
+                <Text style={{ fontSize: 10.5, color: theme?.textSub || '#64748b' }}>
+                  Waktu: {currentCfg.step3Time} • Tombol:{' '}
+                  <Text style={{ color: '#0284c7', fontWeight: '800' }}>Presensi (Biru)</Text>
                 </Text>
               </View>
               <View
@@ -1016,14 +1224,14 @@ export default function AttendanceScreen({
                   paddingHorizontal: 8,
                   paddingVertical: 3,
                   borderRadius: 6,
-                  backgroundColor: s1Pulang ? '#dcfce7' : '#f1f5f9',
+                  backgroundColor: s1Pulang ? '#dcfce7' : (theme?.pillBg || '#f1f5f9'),
                 }}
               >
                 <Text
                   style={{
                     fontSize: 10,
                     fontWeight: '800',
-                    color: s1Pulang ? '#15803d' : '#94a3b8',
+                    color: s1Pulang ? '#15803d' : (theme?.textMuted || '#94a3b8'),
                   }}
                 >
                   {s1Pulang ? `✓ Selesai (${s1Pulang})` : '⏳ Belum'}
@@ -1038,9 +1246,11 @@ export default function AttendanceScreen({
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: s2Pulang ? '#f0fdf4' : '#f8fafc',
+                backgroundColor: s2Pulang
+                  ? (activeDarkMode ? 'rgba(5, 150, 105, 0.2)' : '#f0fdf4')
+                  : (theme?.cellBg || (activeDarkMode ? '#0f172a' : '#f8fafc')),
                 borderWidth: 1,
-                borderColor: s2Pulang ? '#86efac' : '#e2e8f0',
+                borderColor: s2Pulang ? '#16a34a' : (theme?.borderSubtle || '#e2e8f0'),
                 borderRadius: 10,
                 padding: 10,
                 gap: 10,
@@ -1059,11 +1269,18 @@ export default function AttendanceScreen({
                 <Text style={{ color: '#ffffff', fontWeight: '900', fontSize: 12 }}>4</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '800', color: '#1e293b' }}>
+                <Text
+                  style={{
+                    fontSize: 11.5,
+                    fontWeight: '800',
+                    color: theme?.textMain || (activeDarkMode ? '#ffffff' : '#0f172a'),
+                  }}
+                >
                   Absen Pulang {currentCfg.shift2Name}
                 </Text>
-                <Text style={{ fontSize: 10.5, color: '#64748b' }}>
-                  Waktu: {currentCfg.step4Time} • Tombol: <Text style={{ color: '#d97706', fontWeight: '800' }}>Presensi Dording (Kuning)</Text>
+                <Text style={{ fontSize: 10.5, color: theme?.textSub || '#64748b' }}>
+                  Waktu: {currentCfg.step4Time} • Tombol:{' '}
+                  <Text style={{ color: '#d97706', fontWeight: '800' }}>Presensi Dording (Kuning)</Text>
                 </Text>
               </View>
               <View
@@ -1071,14 +1288,14 @@ export default function AttendanceScreen({
                   paddingHorizontal: 8,
                   paddingVertical: 3,
                   borderRadius: 6,
-                  backgroundColor: s2Pulang ? '#dcfce7' : '#f1f5f9',
+                  backgroundColor: s2Pulang ? '#dcfce7' : (theme?.pillBg || '#f1f5f9'),
                 }}
               >
                 <Text
                   style={{
                     fontSize: 10,
                     fontWeight: '800',
-                    color: s2Pulang ? '#15803d' : '#94a3b8',
+                    color: s2Pulang ? '#15803d' : (theme?.textMuted || '#94a3b8'),
                   }}
                 >
                   {s2Pulang ? `✓ Selesai (${s2Pulang})` : '⏳ Belum'}
@@ -1090,10 +1307,23 @@ export default function AttendanceScreen({
 
         {/* Back to Dashboard Button */}
         <TouchableOpacity
-          style={[styles.primaryButton, { backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#cbd5e1' }]}
+          style={[
+            styles.primaryButton,
+            {
+              backgroundColor: theme?.cardSolid || (activeDarkMode ? '#1e293b' : '#f1f5f9'),
+              borderWidth: 1,
+              borderColor: theme?.border || '#cbd5e1',
+            },
+          ]}
           onPress={onBack}
         >
-          <Text style={{ color: '#334155', fontWeight: '800', fontSize: 13.5 }}>
+          <Text
+            style={{
+              color: theme?.textMain || (activeDarkMode ? '#ffffff' : '#334155'),
+              fontWeight: '800',
+              fontSize: 13.5,
+            }}
+          >
             ← Kembali ke Beranda
           </Text>
         </TouchableOpacity>

@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import TilokMap from '../components/TilokMap';
 
 // Titik Tilok Resmi RS Jiwa Tampan (Sesuai Foto 2)
@@ -87,7 +88,31 @@ export default function PdtScreen({
 
   // Mulai Kamera untuk Foto Bukti di Jalan
   const startCamera = async () => {
-    if (Platform.OS !== 'web') return;
+    if (Platform.OS !== 'web') {
+      try {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Izin Ditolak', 'Akses kamera dibutuhkan untuk mengambil foto bukti.');
+          return;
+        }
+        let result = await ImagePicker.launchCameraAsync({
+          quality: 0.8,
+          base64: true,
+        });
+
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          const asset = result.assets[0];
+          // Gunakan base64 jika ada agar bisa ditampilkan, jika tidak gunakan uri
+          const uriOrBase64 = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
+          setFotoBukti(uriOrBase64);
+        }
+      } catch (err) {
+        Alert.alert('Error', 'Gagal membuka kamera perangkat: ' + err.message);
+      }
+      return;
+    }
+    
+    // Fallback khusus untuk Web (menggunakan HTML5 navigator.mediaDevices)
     try {
       setCameraError(null);
       const stream = await navigator.mediaDevices.getUserMedia({

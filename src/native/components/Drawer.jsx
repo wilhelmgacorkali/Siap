@@ -14,12 +14,14 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
     }).start();
   }, [open, slideAnim]);
 
+  const activeTheme = theme || (isDarkMode ? DARK_THEME : LIGHT_THEME);
+
   return (
     <>
       {/* Backdrop overlay */}
       {open && (
         <TouchableOpacity
-          style={styles.drawerBackdrop}
+          style={[styles.drawerBackdrop, { backgroundColor: activeTheme.overlay }]}
           activeOpacity={1}
           onPress={onClose}
         />
@@ -28,10 +30,17 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
       {/* Drawer Container */}
       <Animated.View
         pointerEvents={open ? 'auto' : 'none'}
-        style={[styles.drawer, theme && { backgroundColor: theme.bgHero || theme.bgMain }, { transform: [{ translateX: slideAnim }] }]}
+        style={[
+          styles.drawer,
+          {
+            backgroundColor: activeTheme.drawerBg,
+            borderRightColor: activeTheme.border,
+          },
+          { transform: [{ translateX: slideAnim }] },
+        ]}
       >
         {/* Drawer Header */}
-        <View style={styles.drawerHeader}>
+        <View style={[styles.drawerHeader, { borderBottomColor: activeTheme.borderSubtle }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View
               style={{
@@ -42,6 +51,8 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
                 justifyContent: 'center',
                 alignItems: 'center',
                 padding: 4,
+                borderWidth: 1,
+                borderColor: activeTheme.borderSubtle,
               }}
             >
               <Image
@@ -50,26 +61,38 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
               />
             </View>
             <View>
-              <Text style={styles.drawerLogo}>SIAP RSJ Tampan</Text>
-              <Text style={{ color: '#94a3b8', fontSize: 10, fontWeight: '700' }}>
+              <Text style={[styles.drawerLogo, { color: activeTheme.drawerText }]}>SIAP RSJ Tampan</Text>
+              <Text style={{ color: activeTheme.drawerTextSub, fontSize: 10, fontWeight: '700' }}>
                 Provinsi Riau - Mobile System
               </Text>
             </View>
           </View>
           <TouchableOpacity
-            style={styles.drawerCloseBtn}
+            style={[styles.drawerCloseBtn, { backgroundColor: activeTheme.drawerCloseBg }]}
             onPress={onClose}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={{ color: '#f8fafc', fontSize: 14, fontWeight: '800' }}>✕</Text>
+            <Text style={{ color: activeTheme.drawerText, fontSize: 14, fontWeight: '800' }}>✕</Text>
           </TouchableOpacity>
         </View>
 
         {/* User Profile Card */}
-        <View style={styles.drawerUser}>
-          <Text style={styles.drawerName}>{user?.name || 'Pegawai RS'}</Text>
-          <Text style={styles.drawerRole}>{user?.role || 'Tenaga Medis'}</Text>
-          <Text style={{ color: '#94a3b8', fontSize: 10, marginTop: 4 }}>
+        <View
+          style={[
+            styles.drawerUser,
+            {
+              backgroundColor: activeTheme.drawerUserBg,
+              borderColor: activeTheme.borderSubtle,
+            },
+          ]}
+        >
+          <Text style={[styles.drawerName, { color: activeTheme.drawerText }]}>
+            {user?.name || 'Pegawai RS'}
+          </Text>
+          <Text style={[styles.drawerRole, { color: activeTheme.accent }]}>
+            {user?.role || 'Tenaga Medis'}
+          </Text>
+          <Text style={{ color: activeTheme.drawerTextSub, fontSize: 10, marginTop: 4 }}>
             NIP: {user?.nip || '19890412 201402 2 003'}
           </Text>
         </View>
@@ -80,6 +103,7 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
             icon="📊"
             label="Beranda"
             active={activeScreen === 'dashboard'}
+            theme={activeTheme}
             onPress={() => {
               onNavigate('dashboard');
               onClose();
@@ -89,6 +113,7 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
             icon="📍"
             label="Presensi Sekarang"
             active={activeScreen === 'presensi_sekarang'}
+            theme={activeTheme}
             onPress={() => {
               onNavigate('presensi', 'sekarang');
               onClose();
@@ -98,6 +123,7 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
             icon="⏱️"
             label="Presensi Dording"
             active={activeScreen === 'presensi_dording'}
+            theme={activeTheme}
             onPress={() => {
               onNavigate('presensi', 'dording');
               onClose();
@@ -107,6 +133,7 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
             icon="📈"
             label="Rekap Absensi"
             active={activeScreen === 'rekap'}
+            theme={activeTheme}
             onPress={() => {
               onNavigate('rekap');
               onClose();
@@ -116,6 +143,7 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
             icon="🚗"
             label="Presensi Luar Tilok (PDT)"
             active={activeScreen === 'pdt'}
+            theme={activeTheme}
             onPress={() => {
               onNavigate('pdt');
               onClose();
@@ -138,13 +166,27 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
   );
 }
 
-function NavItem({ icon, label, active, onPress }) {
+function NavItem({ icon, label, active, theme, onPress }) {
   return (
     <TouchableOpacity
-      style={[styles.navItem, active && styles.navItemActive]}
+      style={[
+        styles.navItem,
+        active
+          ? styles.navItemActive
+          : { backgroundColor: 'transparent' },
+      ]}
       onPress={onPress}
     >
-      <Text style={[styles.navText, active && styles.navTextActive]}>
+      <Text
+        style={[
+          styles.navText,
+          {
+            color: active
+              ? '#ffffff'
+              : theme?.drawerText || '#0f172a',
+          },
+        ]}
+      >
         {icon} {label}
       </Text>
     </TouchableOpacity>

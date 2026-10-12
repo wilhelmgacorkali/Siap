@@ -55,6 +55,24 @@
   --transition-spring: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+body.dark-theme,
+.dark-theme,
+.app-container.dark-theme {
+  --bg-app: #090d16;
+  --bg-card: #131b2e;
+  --bg-card-glass: rgba(19, 27, 46, 0.92);
+  --border-color: rgba(255, 255, 255, 0.15);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --text-main: #ffffff;
+  --text-muted: #cbd5e1;
+  --text-light: #94a3b8;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.7);
+  --shadow-xl: 0 20px 30px -5px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 25px rgba(56, 189, 248, 0.25);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -2503,3 +2521,346 @@ body {
   display: inline-flex;
   align-items: center;
 }
+
+/* ==========================================================================
+   AUTHENTIC SIAP RSJ TAMPAN REFERENCE COMPONENTS & DARK/LIGHT THEME SYSTEM
+   ========================================================================== */
+
+/* Top Breadcrumb Navigation */
+.dashboard-breadcrumb-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.page-title-main {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--text-main);
+  letter-spacing: -0.5px;
+  margin-bottom: 2px;
+}
+
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+}
+
+.crumb-home {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.crumb-sep {
+  color: var(--text-muted);
+}
+
+.crumb-active {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.dashboard-theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.dashboard-theme-toggle-btn:hover {
+  background: var(--border-color);
+  transform: translateY(-1px);
+}
+
+/* Authentic Welcome Greeting Card */
+.welcome-card-ref {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.welcome-card-ref .welcome-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.welcome-card-ref .welcome-name {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+}
+
+.welcome-card-ref .welcome-datetime-ref {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.welcome-card-ref .live-clock-badge {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--primary);
+  background: rgba(2, 132, 199, 0.1);
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(2, 132, 199, 0.2);
+}
+
+/* Calendar Card Component (Jadwal Dinas & Jadwal Dording) */
+.calendar-card-ref {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.calendar-header-dinas {
+  background: #d1e7dd;
+  color: #0f5132;
+  padding: 12px 18px;
+  font-size: 14.5px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dark-theme .calendar-header-dinas {
+  background: #064e3b;
+  color: #6ee7b7;
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.calendar-header-dording {
+  background: #f8d7da;
+  color: #842029;
+  padding: 12px 18px;
+  font-size: 14.5px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dark-theme .calendar-header-dording {
+  background: #4c0519;
+  color: #fda4af;
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.calendar-body-ref {
+  padding: 16px;
+}
+
+.filter-badges-row-ref {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-green-badge-ref {
+  background: #198754;
+  color: #ffffff;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-block;
+}
+
+/* 1-31 Days Grid */
+.calendar-days-grid-ref {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.day-tile-ref {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  border-radius: 8px;
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+}
+
+.day-tile-ref:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+.day-tile-ref .day-num {
+  font-size: 13px;
+  line-height: 1.1;
+}
+
+.day-tile-ref .shift-code {
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+.day-tile-today {
+  outline: 2.5px solid #38bdf8;
+  outline-offset: 1px;
+  transform: scale(1.04);
+}
+
+/* Shift badge colors */
+.tile-pagi { background: #198754; }
+.tile-sore { background: #0284c7; }
+.tile-malam { background: #7c3aed; }
+.tile-dording { background: #d97706; }
+.tile-cuti { background: #343a40; }
+.tile-libur { background: #6c757d; }
+.tile-off { background: #343a40; }
+
+/* Shift Legend */
+.legend-container-ref {
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 11.5px;
+}
+
+.legend-title-ref {
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.legend-items-ref {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.legend-item-ref {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.legend-dot-ref {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Footer matching Reference */
+.footer-ref {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.footer-ref a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.footer-ref a:hover {
+  text-decoration: underline;
+}
+
+.footer-domain-ref {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-light);
+  font-family: inherit;
+}
+
+/* Dark Theme Adjustments for Complete Visibility */
+.dark-theme .app-header {
+  background: #0f172a;
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .header-icon-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.dark-theme .header-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.dark-theme .menu-toggle-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.dark-theme .menu-icon-bars span {
+  background: #fff;
+}
+
+.dark-theme .sidebar-drawer {
+  background: #0f172a;
+  border-right-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .sidebar-user-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .user-detail h4 {
+  color: #fff;
+}
+
+.dark-theme .card-presensi-dording {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #0f172a !important;
+}
+
+.dark-theme .card-presensi-dording .action-card-title {
+  color: #0f172a !important;
+}
+
+.dark-theme .card-presensi-dording .action-card-desc {
+  color: #1e293b !important;
+}
+
+.dark-theme .card-presensi-dording .action-card-icon-wrap {
+  color: #0f172a !important;
+  background: rgba(0, 0, 0, 0.15) !important;
+}
+

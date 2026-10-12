@@ -17,6 +17,8 @@ import Drawer from './components/Drawer';
 import { styles, DARK_THEME, LIGHT_THEME } from './theme';
 import { RSJ_LOGO_URI } from './assets';
 
+import storageService from './storage';
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [screen, setScreen] = useState('dashboard');
@@ -32,6 +34,36 @@ export default function App() {
     dording: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
     pdt: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
   });
+
+  // Load persisted user, attendance, and theme from AsyncStorage on startup
+  useEffect(() => {
+    const loadPersistedData = async () => {
+      try {
+        const savedUser = await storageService.getUser();
+        if (savedUser) {
+          setUser(savedUser);
+        }
+
+        const savedAttendance = await storageService.getAttendance();
+        if (savedAttendance) {
+          setAttendance((prev) => ({
+            sekarang: savedAttendance.sekarang || prev.sekarang,
+            dording: savedAttendance.dording || prev.dording,
+            pdt: savedAttendance.pdt || prev.pdt,
+          }));
+        }
+
+        const savedDarkMode = await storageService.getDarkMode();
+        if (savedDarkMode !== null) {
+          setIsDarkMode(savedDarkMode);
+        }
+      } catch (err) {
+        console.warn('Gagal memuat data dari AsyncStorage:', err);
+      }
+    };
+
+    loadPersistedData();
+  }, []);
 
   useEffect(() => {
     const updateClock = () => {
@@ -54,16 +86,21 @@ export default function App() {
 
   const handleLogin = (account) => {
     setUser(account);
+    storageService.saveUser(account);
     setScreen('dashboard');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await storageService.removeUser();
     setUser(null);
     setScreen('dashboard');
-    setAttendance({
+    const resetAttendance = {
       sekarang: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
       dording: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
-    });
+      pdt: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
+    };
+    setAttendance(resetAttendance);
+    await storageService.saveAttendance(resetAttendance);
     setDrawerOpen(false);
   };
 
@@ -73,15 +110,19 @@ export default function App() {
     const photo = typeof data === 'object' ? data.photo : null;
     const modeKey = mode === 'dording' ? 'dording' : 'sekarang';
 
-    setAttendance((prev) => ({
-      ...prev,
-      [modeKey]: {
-        ...prev[modeKey],
-        [attendanceType]: time,
-        [`${attendanceType}Score`]: score,
-        [`${attendanceType}Photo`]: photo,
-      },
-    }));
+    setAttendance((prev) => {
+      const nextAttendance = {
+        ...prev,
+        [modeKey]: {
+          ...prev[modeKey],
+          [attendanceType]: time,
+          [`${attendanceType}Score`]: score,
+          [`${attendanceType}Photo`]: photo,
+        },
+      };
+      storageService.saveAttendance(nextAttendance);
+      return nextAttendance;
+    });
     setModalVisible(false);
     const modeTitle = mode === 'dording' ? 'DORDING' : 'REGULER';
     Alert.alert(
@@ -91,14 +132,26 @@ export default function App() {
   };
 
   const handleUpdatePdtAttendance = (type, time, scoreData) => {
-    setAttendance((prev) => ({
-      ...prev,
-      pdt: {
-        ...prev.pdt,
-        [type]: time,
-        [`${type}Score`]: scoreData,
-      },
-    }));
+    setAttendance((prev) => {
+      const nextAttendance = {
+        ...prev,
+        pdt: {
+          ...prev.pdt,
+          [type]: time,
+          [`${type}Score`]: scoreData,
+        },
+      };
+      storageService.saveAttendance(nextAttendance);
+      return nextAttendance;
+    });
+  };
+
+  const handleToggleDarkMode = () => {
+    setIsDarkMode((prev) => {
+      const nextVal = !prev;
+      storageService.saveDarkMode(nextVal);
+      return nextVal;
+    });
   };
 
   if (!user) {
@@ -159,13 +212,25 @@ export default function App() {
             <Text style={[styles.headerTitle, { color: theme.textMain }]}>{getScreenTitle()}</Text>
           </View>
 
-          <TouchableOpacity
-            style={[styles.notification, { backgroundColor: theme.pillBg, borderColor: theme.border }]}
-            activeOpacity={0.7}
-            onPress={() => Alert.alert('Notifikasi', 'Tidak ada notifikasi penting saat ini.')}
-          >
-            <Text style={{ fontSize: 16 }}>🔔</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity
+              style={[styles.notification, { backgroundColor: theme.pillBg, borderColor: theme.border }]}
+              activeOpacity={0.7}
+              onPress={handleToggleDarkMode}
+              accessibilityLabel="Ganti Tema Gelap / Terang"
+              title="Ganti Tema Gelap / Terang"
+            >
+              <Text style={{ fontSize: 16 }}>{isDarkMode ? '🌙' : '☀️'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.notification, { backgroundColor: theme.pillBg, borderColor: theme.border }]}
+              activeOpacity={0.7}
+              onPress={() => Alert.alert('Notifikasi', 'Tidak ada notifikasi penting saat ini.')}
+            >
+              <Text style={{ fontSize: 16 }}>🔔</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Main Content Area */}
@@ -178,7 +243,7 @@ export default function App() {
               dordingAttendance={attendance.dording}
               onNavigate={navigate}
               isDarkMode={isDarkMode}
-              onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+              onToggleDarkMode={handleToggleDarkMode}
             />
           )}
 

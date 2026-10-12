@@ -15,6 +15,7 @@
     selectedDevice: 'iphone', // 'iphone' | 'fullscreen'
     presensiMode: 'dording', // 'sekarang' | 'dording'
     simPreset: 'live', // 'live' | 'ontime' | 'late15' | 'late30' | 'late60'
+    isDarkMode: localStorage.getItem('siap_dark_mode') === 'true',
 
     // Konfigurasi Jam Absen per Shift (dapat diubah Admin)
     shiftSettings: {
@@ -316,6 +317,14 @@
   // VIEW RENDERERS
   // =========================================================================
   function renderApp() {
+    if (state.isDarkMode) {
+      document.body.classList.add('dark-theme');
+      if (appContainer) appContainer.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+      if (appContainer) appContainer.classList.remove('dark-theme');
+    }
+
     if (!state.user && state.currentScreen !== 'login') {
       state.currentScreen = 'login';
     }
@@ -371,6 +380,9 @@
         </div>
 
         <div class="header-actions">
+          <button class="header-icon-btn" id="btn-toggle-theme" title="Ganti Tema Gelap / Terang">
+            ${state.isDarkMode ? '🌙' : '☀️'}
+          </button>
           <button class="header-icon-btn" id="btn-header-notif" title="Notifikasi">
             🔔
             <span class="notif-badge"></span>
