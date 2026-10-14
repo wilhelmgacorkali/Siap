@@ -70,24 +70,78 @@ export default function PdtScreen({
   const [keteranganDetail, setKeteranganDetail] = useState('');
   const [fotoBukti, setFotoBukti] = useState(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isCameraLoading, setIsCameraLoading] = useState(false);
   const [cameraError, setCameraError] = useState(null);
+  const [facingMode, setFacingMode] = useState('user'); // 'user' | 'environment'
+  const [formError, setFormError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [localPdtData, setLocalPdtData] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Preset Jam Simulasi untuk Pengujian Jam Kerja
   const [simulatedTimePreset, setSimulatedTimePreset] = useState('live');
 
-  // Attendance Records PDT (lokal jika belum ada di props)
-  const pdtData = attendance?.pdt || {
-    masuk: null,
-    pulang: null,
-    masukScore: null,
-    pulangScore: null,
+  // Attendance Records PDT (kombinasi props dan lokal seketika)
+  const pdtData = {
+    ...(attendance?.pdt || {
+      masuk: null,
+      pulang: null,
+      masukScore: null,
+      pulangScore: null,
+    }),
+    ...localPdtData,
   };
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
+  // Callback ref agar media stream langsung terhubung begitu elemen <video> di-mount ke DOM
+  const attachVideoRef = (node) => {
+    videoRef.current = node;
+    if (node && streamRef.current) {
+      if (node.srcObject !== streamRef.current) {
+        node.srcObject = streamRef.current;
+      }
+      node.muted = true;
+      node.playsInline = true;
+      const p = node.play();
+      if (p !== undefined) {
+        p.catch((err) => console.log('Video play catch on ref attach:', err));
+      }
+    }
+  };
+
+  // Pastikan stream terpasang ketika isCameraActive bernilai true
+  useEffect(() => {
+    if (isCameraActive && streamRef.current && videoRef.current) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+      videoRef.current.muted = true;
+      videoRef.current.playsInline = true;
+      const p = videoRef.current.play();
+      if (p !== undefined) {
+        p.catch((err) => console.log('Video play catch on cameraActive effect:', err));
+      }
+    }
+  }, [isCameraActive]);
+
+  // Bersihkan track kamera saat unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
+  // Bersihkan kamera saat modal ditutup
+  useEffect(() => {
+    if (!modalVisible) {
+      stopCamera();
+    }
+  }, [modalVisible]);
+
   // Mulai Kamera untuk Foto Bukti di Jalan
-  const startCamera = async () => {
+  const startCamera = async (targetFacingMode = facingMode) => {
     if (Platform.OS !== 'web') {
       try {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -111,62 +165,162 @@ export default function PdtScreen({
       }
       return;
     }
-    
-    // Fallback khusus untuk Web (menggunakan HTML5 navigator.mediaDevices)
+
+    // Stop stream lama jika masih aktif
+    if (streamRef.current) {
+      try {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      } catch (e) {}
+      streamRef.current = null;
+    }
+
+    // Implementasi khusus Web (HTML5 navigator.mediaDevices)
     try {
       setCameraError(null);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
-        audio: false,
-      });
+      setIsCameraLoading(true);
+
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        throw new Error('Browser tidak mendukung akses kamera langsung (getUserMedia).');
+      }
+
+      let stream = null;
+      try {
+        // Percobaan 1: Coba dengan constraint facingMode ideal dan resolusi HD
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: targetFacingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        });
+      } catch (err1) {
+        console.warn('Percobaan facingMode gagal, mencoba fallback generic video: true...', err1);
+        // Percobaan 2: Fallback generic video: true (sangat penting untuk webcam PC/laptop USB)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
+
       streamRef.current = stream;
+      setIsCameraActive(true);
+      setIsCameraLoading(false);
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        videoRef.current.muted = true;
+        videoRef.current.playsInline = true;
+        const p = videoRef.current.play();
+        if (p !== undefined) {
+          p.catch((err) => console.log('Video play catch in startCamera:', err));
+        }
       }
-      setIsCameraActive(true);
     } catch (err) {
-      console.log('Kamera error:', err);
-      setCameraError('Akses kamera tidak diizinkan atau kamera tidak tersedia.');
+      console.error('Kamera error:', err);
+      setCameraError('Akses kamera tidak diizinkan atau kamera tidak tersedia pada browser Anda.');
       setIsCameraActive(false);
+      setIsCameraLoading(false);
     }
+  };
+
+  // Toggle antara Kamera Depan dan Belakang (Jalan)
+  const handleToggleFacingMode = () => {
+    const nextMode = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(nextMode);
+    startCamera(nextMode);
   };
 
   const stopCamera = () => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      try {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      } catch (e) {}
       streamRef.current = null;
     }
+    if (videoRef.current) {
+      try {
+        videoRef.current.srcObject = null;
+      } catch (e) {}
+    }
     setIsCameraActive(false);
+    setIsCameraLoading(false);
+  };
+
+  // Fungsi utilitas untuk mengambil frame kamera aktif dengan watermark resmi
+  const captureCurrentFrame = () => {
+    if (!videoRef.current) return null;
+    try {
+      const video = videoRef.current;
+      const vw = video.videoWidth || 640;
+      const vh = video.videoHeight || 480;
+
+      // Batasi ukuran gambar maksimal 800px agar ringan di penyimpanan tapi tetap sangat tajam
+      const scale = Math.min(1, 800 / Math.max(vw, vh));
+      const targetW = Math.round(vw * scale);
+      const targetH = Math.round(vh * scale);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+
+      // Jika kamera depan, buat cerminan wajar seperti tampilan preview
+      if (facingMode === 'user') {
+        ctx.translate(targetW, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, targetW, targetH);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+      } else {
+        ctx.drawImage(video, 0, 0, targetW, targetH);
+      }
+
+      // Watermark PDT Resmi
+      const bannerHeight = Math.max(75, Math.round(targetH * 0.22));
+      const bannerTop = targetH - bannerHeight;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.fillRect(0, bannerTop, targetW, bannerHeight);
+
+      // Garis oranye aksen SIMRS
+      ctx.fillStyle = '#f97316';
+      ctx.fillRect(0, bannerTop, targetW, 3);
+
+      ctx.fillStyle = '#f97316';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.fillText('BUKTI PERJALANAN PRESENSI LUAR TILOK (PDT)', 14, bannerTop + 20);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '10.5px monospace';
+      ctx.fillText(
+        `GPS: 0.4732N, 101.3755E (${simulatedDistance}m dari RSJ Tampan) | ${clockToDisplay} WIB`,
+        14,
+        bannerTop + 38
+      );
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText(
+        `Pegawai: ${user?.name || 'Pegawai RS'} | Alasan: ${alasan.slice(0, 32)}`,
+        14,
+        bannerTop + 56
+      );
+
+      return canvas.toDataURL('image/jpeg', 0.82);
+    } catch (err) {
+      console.error('Frame capture error:', err);
+      return null;
+    }
   };
 
   const handleCapturePhoto = () => {
-    if (!videoRef.current) return;
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 640;
-      canvas.height = 480;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(videoRef.current, 0, 0, 640, 480);
-
-      // Watermark PDT Resmi
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
-      ctx.fillRect(0, 390, 640, 90);
-      ctx.fillStyle = '#f97316';
-      ctx.font = 'bold 15px sans-serif';
-      ctx.fillText('BUKTI PERJALANAN PRESENSI LUAR TILOK (PDT)', 16, 415);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '12px monospace';
-      ctx.fillText(`GPS: 0.4732N, 101.3755E (${simulatedDistance}m dari RSJ Tampan) | ${clockToDisplay} WIB`, 16, 437);
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = 'bold 12px sans-serif';
-      ctx.fillText(`Pegawai: ${user?.name || 'Pegawai RS'} | Alasan: ${alasan.slice(0, 32)}`, 16, 459);
-
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      setFotoBukti(dataUrl);
+    const photo = captureCurrentFrame();
+    if (photo) {
+      setFotoBukti(photo);
+      setFormError(null);
       stopCamera();
-    } catch (err) {
-      console.log('Capture error:', err);
+    } else {
+      setFormError('Gagal mengambil foto dari kamera. Silakan coba kembali.');
     }
   };
 
@@ -177,6 +331,7 @@ export default function PdtScreen({
       const reader = new FileReader();
       reader.onload = (event) => {
         setFotoBukti(event.target.result);
+        setFormError(null);
       };
       reader.readAsDataURL(file);
     }
@@ -186,44 +341,69 @@ export default function PdtScreen({
   const handleOpenAbsen = (type) => {
     // 1. Cek Geofencing
     if (!isOutside) {
-      Alert.alert(
-        'Perhatian Tilok',
-        `Anda saat ini terdeteksi berada di dalam radius resmi (${simulatedDistance}m <= 200m). Menu PDT khusus untuk presensi di luar radius kantor. Apakah Anda ingin tetap lanjut ke form PDT?`,
-        [
-          { text: 'Batal', style: 'cancel' },
-          {
-            text: 'Lanjut PDT',
-            onPress: () => {
-              setAbsenType(type);
-              setModalVisible(true);
+      const msg = `Anda saat ini terdeteksi berada di dalam radius resmi (${simulatedDistance}m <= 200m). Menu PDT khusus untuk presensi di luar radius kantor. Apakah Anda ingin tetap lanjut ke form PDT?`;
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.confirm) {
+        if (!window.confirm(msg)) return;
+      } else {
+        Alert.alert(
+          'Perhatian Tilok',
+          msg,
+          [
+            { text: 'Batal', style: 'cancel' },
+            {
+              text: 'Lanjut PDT',
+              onPress: () => {
+                setAbsenType(type);
+                setFotoBukti(null);
+                setFormError(null);
+                setModalVisible(true);
+              },
             },
-          },
-        ]
-      );
-      return;
+          ]
+        );
+        return;
+      }
     }
 
     setAbsenType(type);
     setFotoBukti(null);
+    setFormError(null);
     setModalVisible(true);
   };
 
   // Kirim & Simpan Absen PDT
   const handleSubmitPdt = () => {
-    if (!fotoBukti) {
-      Alert.alert(
-        'Foto Bukti Diperlukan',
-        'Harap ambil atau lampirkan foto bukti bahwasanya Anda masih di jalan menuju kantor atau sedang berada di lokasi dinas luar.'
-      );
+    setFormError(null);
+
+    // 1. Cek Foto Bukti: Jika belum ada foto tapi kamera sedang aktif menyala, otomatis ambil frame saat itu juga!
+    let photoToSave = fotoBukti;
+    if (!photoToSave && isCameraActive && videoRef.current) {
+      photoToSave = captureCurrentFrame();
+      if (photoToSave) {
+        setFotoBukti(photoToSave);
+      }
+    }
+
+    // 2. Jika foto tetap belum ada, berikan notifikasi error yang jelas dan interaktif
+    if (!photoToSave) {
+      const errMsg = 'Harap ambil foto bukti kondisi jalan terlebih dahulu atau pilih file foto!';
+      setFormError(errMsg);
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+        window.alert('⚠️ Foto Bukti Diperlukan\n\n' + errMsg);
+      } else {
+        Alert.alert('Foto Bukti Diperlukan', errMsg);
+      }
       return;
     }
+
+    setIsSubmitting(true);
 
     const finalTime =
       simulatedTimePreset === 'ontime'
         ? (absenType === 'masuk' ? '07:45:00' : '16:05:00')
         : clockToDisplay;
 
-    // Perhitungan score PDT
+    // Perhitungan score & data presensi PDT
     const scoreData = {
       code: absenType === 'masuk' ? 'PDT-M' : 'PDT-P',
       label: absenType === 'masuk' ? 'Masuk (Luar Tilok)' : 'Pulang (Luar Tilok)',
@@ -234,22 +414,43 @@ export default function PdtScreen({
       color: '#c2410c',
       reason: alasan,
       keterangan: keteranganDetail,
-      photo: fotoBukti,
+      photo: photoToSave,
       distance: simulatedDistance,
       validTilokCoords: `${TILOK_RESMI.latitude}, ${TILOK_RESMI.longitude} (Radius ${TILOK_RESMI.radius}m)`,
     };
 
-    if (onUpdatePdtAttendance) {
-      onUpdatePdtAttendance(absenType, finalTime, scoreData);
+    try {
+      // 1. Simpan ke sistem induk App
+      if (onUpdatePdtAttendance) {
+        onUpdatePdtAttendance(absenType, finalTime, scoreData);
+      }
+
+      // 2. Simpan ke state lokal seketika agar UI kartu langsung update (bercentang hijau)
+      setLocalPdtData((prev) => ({
+        ...prev,
+        [absenType]: finalTime,
+        [`${absenType}Score`]: scoreData,
+      }));
+
+      // 3. Matikan kamera dan tutup modal
+      stopCamera();
+      setModalVisible(false);
+      setIsSubmitting(false);
+
+      // 4. Tampilkan pesan sukses jelas
+      const successText = `Presensi ${absenType === 'masuk' ? 'Masuk' : 'Pulang'} luar tilok (PDT) berhasil disimpan pada ${finalTime} WIB!`;
+      setSuccessMessage(successText);
+
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+        window.alert(`✓ Presensi PDT Berhasil Disimpan!\n\n${successText}\n\nAlasan: ${alasan}`);
+      } else {
+        Alert.alert('Presensi PDT Berhasil Disimpan! ✓', successText);
+      }
+    } catch (err) {
+      console.error('Submit PDT error:', err);
+      setIsSubmitting(false);
+      setFormError('Gagal menyimpan presensi: ' + err.message);
     }
-
-    stopCamera();
-    setModalVisible(false);
-
-    Alert.alert(
-      'Presensi PDT Berhasil Disimpan! ✓',
-      `Absen ${absenType === 'masuk' ? 'Masuk' : 'Pulang'} luar tilok berhasil dicatat pada ${finalTime} WIB.\nAlasan: ${alasan}\nFoto bukti terlampir dan tersimpan di sistem.`
-    );
   };
 
   return (
@@ -260,6 +461,21 @@ export default function PdtScreen({
           <Text style={styles.screenTitle}>Pegawai Presensi PDT</Text>
           <Text style={styles.breadcrumb}>Home / Pegawai Presensi PDT</Text>
         </View>
+
+        {/* Banner Notifikasi Sukses PDT */}
+        {successMessage && (
+          <View style={styles.successBanner}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+              <View style={styles.successIconBadge}>
+                <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: 'bold' }}>✓</Text>
+              </View>
+              <Text style={styles.successBannerText}>{successMessage}</Text>
+            </View>
+            <TouchableOpacity onPress={() => setSuccessMessage(null)} style={{ padding: 4 }}>
+              <Text style={{ color: '#047857', fontSize: 13, fontWeight: 'bold' }}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Banner Merah Khas SIAP RSJ Tampan (Screenshot 1) */}
         <View style={styles.redBanner}>
@@ -702,64 +918,126 @@ export default function PdtScreen({
                     <View style={styles.cameraBox}>
                       {isCameraActive ? (
                         <View style={{ alignItems: 'center', width: '100%' }}>
-                          {Platform.OS === 'web' && (
-                            <video
-                              ref={videoRef}
-                              autoPlay
-                              playsInline
-                              muted
-                              style={{
-                                width: '100%',
-                                maxHeight: 220,
-                                borderRadius: 10,
-                                backgroundColor: '#000000',
-                                objectFit: 'cover',
-                              }}
-                            />
-                          )}
-                          <TouchableOpacity
-                            style={styles.btnCapture}
-                            onPress={handleCapturePhoto}
-                          >
-                            <Text style={styles.btnCaptureText}>📸 Ambil Foto Bukti Sekarang</Text>
-                          </TouchableOpacity>
-                        </View>
-                      ) : (
-                        <View style={{ alignItems: 'center', padding: 12 }}>
-                          <Text style={{ fontSize: 28 }}>📷</Text>
-                          <Text style={{ fontSize: 12, fontWeight: '700', color: '#334155', marginTop: 4 }}>
-                            Ambil atau Unggah Foto Bukti
-                          </Text>
-                          <Text style={{ fontSize: 10.5, color: '#64748b', textAlign: 'center', marginTop: 2 }}>
-                            Lampirkan foto bahwa Anda masih di jalan menuju kantor
-                          </Text>
+                          {/* Container Preview Kamera Live */}
+                          <View style={styles.videoContainer}>
+                            {Platform.OS === 'web' && (
+                              <video
+                                ref={attachVideoRef}
+                                autoPlay
+                                playsInline
+                                muted
+                                onLoadedMetadata={(e) => {
+                                  try {
+                                    e.currentTarget.play();
+                                  } catch (err) {
+                                    console.warn('Metadata play catch:', err);
+                                  }
+                                }}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  borderRadius: 10,
+                                  backgroundColor: '#0f172a',
+                                  objectFit: 'cover',
+                                  transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
+                                }}
+                              />
+                            )}
 
-                          <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                            {/* Badge Indikator Status Kamera */}
+                            <View style={styles.cameraBadgeOverlay}>
+                              <View style={styles.liveIndicatorBadge}>
+                                <View style={styles.liveDot} />
+                                <Text style={styles.liveIndicatorText}>LIVE KAMERA</Text>
+                              </View>
+                              <View style={styles.facingBadge}>
+                                <Text style={styles.facingBadgeText}>
+                                  {facingMode === 'user' ? '👤 Depan' : '🛣️ Belakang (Jalan)'}
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+
+                          {/* Tombol Kontrol: Jepret, Putar Kamera, Batalkan */}
+                          <View style={styles.cameraControlsRow}>
                             <TouchableOpacity
-                              style={styles.btnStartCamera}
-                              onPress={startCamera}
+                              style={styles.btnCapture}
+                              onPress={handleCapturePhoto}
                             >
-                              <Text style={styles.btnStartCameraText}>Buka Kamera Langsung</Text>
+                              <Text style={styles.btnCaptureText}>📸 Ambil Foto Bukti Sekarang</Text>
                             </TouchableOpacity>
 
                             {Platform.OS === 'web' && (
-                              <label style={styles.btnUploadFile}>
-                                <Text style={styles.btnUploadFileText}>📁 Pilih File Foto</Text>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={handleUploadPhoto}
-                                  style={{ display: 'none' }}
-                                />
-                              </label>
+                              <TouchableOpacity
+                                style={styles.btnFlipCamera}
+                                onPress={handleToggleFacingMode}
+                              >
+                                <Text style={styles.btnFlipCameraText}>🔄 Putar</Text>
+                              </TouchableOpacity>
                             )}
+
+                            <TouchableOpacity
+                              style={styles.btnCancelCamera}
+                              onPress={stopCamera}
+                            >
+                              <Text style={styles.btnCancelCameraText}>✕ Batal</Text>
+                            </TouchableOpacity>
                           </View>
                         </View>
+                      ) : (
+                        <View style={{ alignItems: 'center', padding: 12, width: '100%' }}>
+                          {isCameraLoading ? (
+                            <View style={{ alignItems: 'center', paddingVertical: 14 }}>
+                              <Text style={{ fontSize: 26, marginBottom: 6 }}>⏳</Text>
+                              <Text style={{ fontSize: 12, fontWeight: '700', color: '#0284c7' }}>
+                                Menghubungkan ke Kamera...
+                              </Text>
+                              <Text style={{ fontSize: 10.5, color: '#64748b', marginTop: 3 }}>
+                                Mohon tunggu atau izinkan akses kamera pada browser
+                              </Text>
+                            </View>
+                          ) : (
+                            <>
+                              <Text style={{ fontSize: 28 }}>📷</Text>
+                              <Text style={{ fontSize: 12, fontWeight: '700', color: '#334155', marginTop: 4 }}>
+                                Ambil atau Unggah Foto Bukti
+                              </Text>
+                              <Text style={{ fontSize: 10.5, color: '#64748b', textAlign: 'center', marginTop: 2 }}>
+                                Lampirkan foto bahwa Anda masih di jalan menuju kantor
+                              </Text>
+
+                              <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                                <TouchableOpacity
+                                  style={styles.btnStartCamera}
+                                  onPress={() => startCamera('user')}
+                                >
+                                  <Text style={styles.btnStartCameraText}>📸 Buka Kamera Langsung</Text>
+                                </TouchableOpacity>
+
+                                {Platform.OS === 'web' && (
+                                  <label style={styles.btnUploadFile}>
+                                    <Text style={styles.btnUploadFileText}>📁 Pilih File Foto</Text>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={handleUploadPhoto}
+                                      style={{ display: 'none' }}
+                                    />
+                                  </label>
+                                )}
+                              </View>
+                            </>
+                          )}
+                        </View>
                       )}
+
                       {cameraError && (
-                        <Text style={{ color: '#dc2626', fontSize: 10.5, marginTop: 6 }}>
-                          {cameraError}
-                        </Text>
+                        <View style={styles.cameraErrorBox}>
+                          <Text style={{ fontSize: 13, marginRight: 6 }}>⚠️</Text>
+                          <Text style={styles.cameraErrorText}>
+                            {cameraError}
+                          </Text>
+                        </View>
                       )}
                     </View>
                   )}
@@ -781,12 +1059,22 @@ export default function PdtScreen({
 
               {/* Tombol Simpan & Kirim PDT */}
               <View style={styles.modalFooter}>
+                {formError && (
+                  <View style={styles.formErrorBox}>
+                    <Text style={{ fontSize: 13, marginRight: 6 }}>⚠️</Text>
+                    <Text style={styles.formErrorText}>{formError}</Text>
+                  </View>
+                )}
+
                 <TouchableOpacity
-                  style={styles.btnSubmitPdt}
+                  style={[styles.btnSubmitPdt, isSubmitting && { opacity: 0.7 }]}
+                  disabled={isSubmitting}
                   onPress={handleSubmitPdt}
                 >
                   <Text style={styles.btnSubmitPdtText}>
-                    Simpan & Kirim Presensi Luar Tilok (PDT) ✓
+                    {isSubmitting
+                      ? 'Sedang Menyimpan Presensi PDT...'
+                      : 'Simpan & Kirim Presensi Luar Tilok (PDT) ✓'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -1326,17 +1614,127 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  videoContainer: {
+    width: '100%',
+    height: 240,
+    backgroundColor: '#0f172a',
+    borderRadius: 10,
+    overflow: 'hidden',
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cameraBadgeOverlay: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    right: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    pointerEvents: 'none',
+  },
+  liveIndicatorBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22c55e',
+  },
+  liveIndicatorText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: 0.5,
+  },
+  facingBadge: {
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  facingBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: '#cbd5e1',
+  },
+  cameraControlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 10,
+    width: '100%',
+  },
   btnCapture: {
-    marginTop: 8,
+    flex: 1,
     backgroundColor: '#e11d48',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   btnCaptureText: {
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
+  },
+  btnFlipCamera: {
+    backgroundColor: '#f1f5f9',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  btnFlipCameraText: {
+    color: '#334155',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  btnCancelCamera: {
+    backgroundColor: '#fee2e2',
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  btnCancelCameraText: {
+    color: '#b91c1c',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  cameraErrorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginTop: 10,
+    width: '100%',
+  },
+  cameraErrorText: {
+    color: '#b91c1c',
+    fontSize: 11,
+    fontWeight: '600',
+    flex: 1,
   },
   photoPreviewCard: {
     borderWidth: 1,
@@ -1370,6 +1768,49 @@ const styles = StyleSheet.create({
     marginTop: 6,
     borderLeftWidth: 3,
     borderLeftColor: '#059669',
+  },
+  formErrorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 10,
+  },
+  formErrorText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#b91c1c',
+    flex: 1,
+  },
+  successBanner: {
+    backgroundColor: '#ecfdf5',
+    borderWidth: 1,
+    borderColor: '#6ee7b7',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  successIconBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#059669',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  successBannerText: {
+    color: '#065f46',
+    fontSize: 12,
+    fontWeight: '700',
+    flex: 1,
   },
   modalFooter: {
     borderTopWidth: 1,
