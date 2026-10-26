@@ -16,6 +16,7 @@ export default function AttendanceScreen({
   onOpenModal,
   onCloseModal,
   onSubmit,
+  onResetAttendance,
   onSwitchMode,
   onNavigateToPdt,
   onBack,
@@ -242,6 +243,18 @@ export default function AttendanceScreen({
     year: 'numeric',
   }).format(new Date());
 
+  const getTodayYMD = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayYMD = getTodayYMD();
+  const masukDisplayDate = attendance?.masukDate || attendance?.date || allAttendance?.date || todayYMD;
+  const pulangDisplayDate = attendance?.pulangDate || attendance?.date || allAttendance?.date || todayYMD;
+
   return (
     <ScrollView style={[styles.scroll, theme && { backgroundColor: theme.bgMain }]} showsVerticalScrollIndicator={false}>
       <View style={styles.page}>
@@ -277,7 +290,7 @@ export default function AttendanceScreen({
               }}
             >
               🟦 Presensi (Shift 1)
-            </Text>x
+            </Text>
             <Text
               style={{
                 fontSize: 10,
@@ -461,26 +474,67 @@ export default function AttendanceScreen({
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={{
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 8,
-              backgroundColor: theme?.pillBg || '#f1f5f9',
-            }}
-            onPress={fetchRealLocation}
-            disabled={isLocating}
-          >
-            <Text
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {(attendance?.masuk || attendance?.pulang) && onResetAttendance && (
+              <TouchableOpacity
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  backgroundColor: activeDarkMode ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2',
+                  borderWidth: 1,
+                  borderColor: '#ef4444',
+                }}
+                onPress={() => {
+                  if (Platform.OS === 'web') {
+                    if (window.confirm('Reset status presensi hari ini agar tombol absensi dapat dicoba kembali?')) {
+                      onResetAttendance();
+                    }
+                  } else {
+                    Alert.alert(
+                      'Reset Presensi',
+                      'Apakah Anda ingin mereset status presensi hari ini agar tombol Masuk & Pulang bisa digunakan kembali?',
+                      [
+                        { text: 'Batal', style: 'cancel' },
+                        { text: 'Reset', style: 'destructive', onPress: onResetAttendance },
+                      ]
+                    );
+                  }
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: '800',
+                    color: '#dc2626',
+                  }}
+                >
+                  🔄 Reset Hari Ini
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
               style={{
-                fontSize: 10,
-                fontWeight: '800',
-                color: theme?.textMain || '#0f172a',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 8,
+                backgroundColor: theme?.pillBg || '#f1f5f9',
               }}
+              onPress={fetchRealLocation}
+              disabled={isLocating}
             >
-              🔄 Segarkan
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: '800',
+                  color: theme?.textMain || '#0f172a',
+                }}
+              >
+                📍 GPS
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Live Clock Card Sesuai Tampilan Asli SIAP RSJ Tampan */}
@@ -569,7 +623,7 @@ export default function AttendanceScreen({
                     : (theme?.textMuted || '#94a3b8'),
                 }}
               >
-                {attendance?.masuk ? `2026-09-16 ${attendance.masuk}` : '--:--:--'}
+                {attendance?.masuk ? `${masukDisplayDate} ${attendance.masuk}` : '--:--:--'}
               </Text>
 
               {/* Badge Persentase Format SIAP RSJ Tampan (SWM 0.00%) */}
@@ -691,7 +745,7 @@ export default function AttendanceScreen({
                     : (theme?.textMuted || '#94a3b8'),
                 }}
               >
-                {attendance?.pulang ? `2026-09-16 ${attendance.pulang}` : '--:--:--'}
+                {attendance?.pulang ? `${pulangDisplayDate} ${attendance.pulang}` : '--:--:--'}
               </Text>
 
               {/* Badge Persentase Pulang Format SIAP RSJ Tampan (XX 0% atau SWP 0.00%) */}

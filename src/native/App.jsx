@@ -19,6 +19,21 @@ import { RSJ_LOGO_URI } from './assets';
 
 import storageService from './storage';
 
+const getTodayDateString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const createEmptyAttendance = (dateStr = getTodayDateString()) => ({
+  date: dateStr,
+  sekarang: { masuk: null, pulang: null, masukScore: null, pulangScore: null, date: dateStr },
+  dording: { masuk: null, pulang: null, masukScore: null, pulangScore: null, date: dateStr },
+  pdt: { masuk: null, pulang: null, masukScore: null, pulangScore: null, date: dateStr },
+});
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [screen, setScreen] = useState('dashboard');
@@ -29,11 +44,7 @@ export default function App() {
   const [attendanceType, setAttendanceType] = useState('masuk');
   const [isDarkMode, setIsDarkMode] = useState(true);
   const theme = isDarkMode ? DARK_THEME : LIGHT_THEME;
-  const [attendance, setAttendance] = useState({
-    sekarang: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
-    dording: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
-    pdt: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
-  });
+  const [attendance, setAttendance] = useState(() => createEmptyAttendance());
 
   // Load persisted user, attendance, and theme from AsyncStorage on startup
   useEffect(() => {
@@ -45,12 +56,28 @@ export default function App() {
         }
 
         const savedAttendance = await storageService.getAttendance();
+        const todayStr = getTodayDateString();
+
         if (savedAttendance) {
-          setAttendance((prev) => ({
-            sekarang: savedAttendance.sekarang || prev.sekarang,
-            dording: savedAttendance.dording || prev.dording,
-            pdt: savedAttendance.pdt || prev.pdt,
-          }));
+          // Jika data absensi tersimpan memiliki tanggal dan tanggalnya cocok dengan hari ini
+          if (savedAttendance.date === todayStr) {
+            setAttendance({
+              date: todayStr,
+              sekarang: savedAttendance.sekarang || createEmptyAttendance(todayStr).sekarang,
+              dording: savedAttendance.dording || createEmptyAttendance(todayStr).dording,
+              pdt: savedAttendance.pdt || createEmptyAttendance(todayStr).pdt,
+            });
+          } else {
+            // Jika tanggalnya sudah berganti hari (misal kemarin atau tgl 16),
+            // otomatis reset agar tombol absensi hari ini aktif kembali!
+            const freshAttendance = createEmptyAttendance(todayStr);
+            setAttendance(freshAttendance);
+            await storageService.saveAttendance(freshAttendance);
+          }
+        } else {
+          const freshAttendance = createEmptyAttendance(todayStr);
+          setAttendance(freshAttendance);
+          await storageService.saveAttendance(freshAttendance);
         }
 
         const savedDarkMode = await storageService.getDarkMode();
@@ -63,6 +90,23 @@ export default function App() {
     };
 
     loadPersistedData();
+  }, []);
+
+  // Periksa otomatis pergantian hari tengah malam
+  useEffect(() => {
+    const checkMidnightReset = () => {
+      const todayStr = getTodayDateString();
+      setAttendance((prev) => {
+        if (prev?.date && prev.date !== todayStr) {
+          const fresh = createEmptyAttendance(todayStr);
+          storageService.saveAttendance(fresh);
+          return fresh;
+        }
+        return prev;
+      });
+    };
+    const midnightInterval = setInterval(checkMidnightReset, 10000);
+    return () => clearInterval(midnightInterval);
   }, []);
 
   useEffect(() => {
@@ -94,11 +138,7 @@ export default function App() {
     await storageService.removeUser();
     setUser(null);
     setScreen('dashboard');
-    const resetAttendance = {
-      sekarang: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
-      dording: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
-      pdt: { masuk: null, pulang: null, masukScore: null, pulangScore: null },
-    };
+    const resetAttendance = createEmptyAttendance();
     setAttendance(resetAttendance);
     await storageService.saveAttendance(resetAttendance);
     setDrawerOpen(false);
@@ -109,13 +149,17 @@ export default function App() {
     const score = typeof data === 'object' ? data.score : null;
     const photo = typeof data === 'object' ? data.photo : null;
     const modeKey = mode === 'dording' ? 'dording' : 'sekarang';
+    const todayStr = getTodayDateString();
 
     setAttendance((prev) => {
       const nextAttendance = {
         ...prev,
+        date: todayStr,
         [modeKey]: {
           ...prev[modeKey],
+          date: todayStr,
           [attendanceType]: time,
+          [`${attendanceType}Date`]: todayStr,
           [`${attendanceType}Score`]: score,
           [`${attendanceType}Photo`]: photo,
         },
@@ -132,18 +176,33 @@ export default function App() {
   };
 
   const handleUpdatePdtAttendance = (type, time, scoreData) => {
+    const todayStr = getTodayDateString();
     setAttendance((prev) => {
       const nextAttendance = {
         ...prev,
+        date: todayStr,
         pdt: {
           ...prev.pdt,
+          date: todayStr,
           [type]: time,
+          [`${type}Date`]: todayStr,
           [`${type}Score`]: scoreData,
         },
       };
       storageService.saveAttendance(nextAttendance);
       return nextAttendance;
     });
+  };
+
+  const handleResetTodayAttendance = async () => {
+    const todayStr = getTodayDateString();
+    const freshAttendance = createEmptyAttendance(todayStr);
+    setAttendance(freshAttendance);
+    await storageService.saveAttendance(freshAttendance);
+    Alert.alert(
+      'Presensi Direset! ✓',
+      'Status presensi hari ini telah direset. Tombol Absen Masuk & Pulang kini aktif kembali.'
+    );
   };
 
   const handleToggleDarkMode = () => {
@@ -264,6 +323,7 @@ export default function App() {
               }}
               onCloseModal={() => setModalVisible(false)}
               onSubmit={submitAttendance}
+              onResetAttendance={handleResetTodayAttendance}
               onSwitchMode={(newMode) => navigate('presensi', newMode)}
               onNavigateToPdt={() => setScreen('pdt')}
               onBack={() => setScreen('dashboard')}
