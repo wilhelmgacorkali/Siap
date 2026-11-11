@@ -101,7 +101,6 @@ export default function LoginScreen({ onLogin }) {
             {/* Input NIP / Nama */}
             <Text style={styles.label}>NIP / Nama Pegawai</Text>
             <View style={styles.inputWrap}>
-              <Text style={styles.inputIcon}>👤</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Masukkan NIP atau Nama"
@@ -114,7 +113,6 @@ export default function LoginScreen({ onLogin }) {
             {/* Input Password */}
             <Text style={styles.label}>Kata Sandi</Text>
             <View style={styles.inputWrap}>
-              <Text style={styles.inputIcon}>🔒</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Kata sandi"
@@ -127,7 +125,9 @@ export default function LoginScreen({ onLogin }) {
                 style={styles.eyeButton}
                 onPress={() => setShowPassword(!showPassword)}
               >
-                <Text style={{ fontSize: 16 }}>{showPassword ? '🙈' : '👁️'}</Text>
+                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#0284c7' }}>
+                  {showPassword ? 'Sembunyikan' : 'Lihat'}
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -137,12 +137,12 @@ export default function LoginScreen({ onLogin }) {
               activeOpacity={0.8}
               onPress={handleManualLogin}
             >
-              <Text style={styles.loginButtonText}>MASUK KE APLIKASI ➔</Text>
+              <Text style={styles.loginButtonText}>MASUK KE APLIKASI</Text>
             </TouchableOpacity>
 
             {/* Tombol Akses Demo Cepat */}
             <View style={styles.quickLoginSection}>
-              <Text style={styles.quickLoginTitle}>⚡ Pilih Akun Demo Cepat:</Text>
+              <Text style={styles.quickLoginTitle}>Pilih Akun Demo Cepat:</Text>
               {demoAccounts.map((account, idx) => (
                 <TouchableOpacity
                   key={idx}
@@ -167,7 +167,7 @@ export default function LoginScreen({ onLogin }) {
                     }}
                   >
                     <Text style={{ fontSize: 9.5, fontWeight: '800', color: '#0369a1' }}>
-                      Pilih ➔
+                      Pilih
                     </Text>
                   </View>
                 </TouchableOpacity>

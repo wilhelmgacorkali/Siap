@@ -18,6 +18,7 @@ import { styles, DARK_THEME, LIGHT_THEME } from './theme';
 import { RSJ_LOGO_URI } from './assets';
 
 import storageService from './storage';
+import { generateBiometricPhoto } from './biometricPhoto';
 
 const getTodayDateString = () => {
   const d = new Date();
@@ -61,12 +62,52 @@ export default function App() {
         if (savedAttendance) {
           // Jika data absensi tersimpan memiliki tanggal dan tanggalnya cocok dengan hari ini
           if (savedAttendance.date === todayStr) {
-            setAttendance({
+            const sekarangData = { ...(savedAttendance.sekarang || createEmptyAttendance(todayStr).sekarang) };
+            const dordingData = { ...(savedAttendance.dording || createEmptyAttendance(todayStr).dording) };
+            const pdtData = { ...(savedAttendance.pdt || createEmptyAttendance(todayStr).pdt) };
+
+            // Backfill foto presensi jika sebelumnya belum terekam
+            if (sekarangData.masuk && !sekarangData.masukPhoto) {
+              sekarangData.masukPhoto = generateBiometricPhoto({
+                user: savedUser,
+                type: 'masuk',
+                time: sekarangData.masuk,
+                isDording: false,
+              });
+            }
+            if (sekarangData.pulang && !sekarangData.pulangPhoto) {
+              sekarangData.pulangPhoto = generateBiometricPhoto({
+                user: savedUser,
+                type: 'pulang',
+                time: sekarangData.pulang,
+                isDording: false,
+              });
+            }
+            if (dordingData.masuk && !dordingData.masukPhoto) {
+              dordingData.masukPhoto = generateBiometricPhoto({
+                user: savedUser,
+                type: 'masuk',
+                time: dordingData.masuk,
+                isDording: true,
+              });
+            }
+            if (dordingData.pulang && !dordingData.pulangPhoto) {
+              dordingData.pulangPhoto = generateBiometricPhoto({
+                user: savedUser,
+                type: 'pulang',
+                time: dordingData.pulang,
+                isDording: true,
+              });
+            }
+
+            const updatedAttendance = {
               date: todayStr,
-              sekarang: savedAttendance.sekarang || createEmptyAttendance(todayStr).sekarang,
-              dording: savedAttendance.dording || createEmptyAttendance(todayStr).dording,
-              pdt: savedAttendance.pdt || createEmptyAttendance(todayStr).pdt,
-            });
+              sekarang: sekarangData,
+              dording: dordingData,
+              pdt: pdtData,
+            };
+            setAttendance(updatedAttendance);
+            await storageService.saveAttendance(updatedAttendance);
           } else {
             // Jika tanggalnya sudah berganti hari (misal kemarin atau tgl 16),
             // otomatis reset agar tombol absensi hari ini aktif kembali!
@@ -147,9 +188,19 @@ export default function App() {
   const submitAttendance = (data) => {
     const time = typeof data === 'object' ? data.time : data || currentTime;
     const score = typeof data === 'object' ? data.score : null;
-    const photo = typeof data === 'object' ? data.photo : null;
+    let photo = typeof data === 'object' ? data.photo : null;
+    const targetType = (typeof data === 'object' && data.type) ? data.type : attendanceType;
     const modeKey = mode === 'dording' ? 'dording' : 'sekarang';
     const todayStr = getTodayDateString();
+
+    if (!photo) {
+      photo = generateBiometricPhoto({
+        user,
+        type: targetType,
+        time,
+        isDording: mode === 'dording',
+      });
+    }
 
     setAttendance((prev) => {
       const nextAttendance = {
@@ -158,10 +209,10 @@ export default function App() {
         [modeKey]: {
           ...prev[modeKey],
           date: todayStr,
-          [attendanceType]: time,
-          [`${attendanceType}Date`]: todayStr,
-          [`${attendanceType}Score`]: score,
-          [`${attendanceType}Photo`]: photo,
+          [targetType]: time,
+          [`${targetType}Date`]: todayStr,
+          [`${targetType}Score`]: score,
+          [`${targetType}Photo`]: photo,
         },
       };
       storageService.saveAttendance(nextAttendance);
@@ -170,8 +221,8 @@ export default function App() {
     setModalVisible(false);
     const modeTitle = mode === 'dording' ? 'DORDING' : 'REGULER';
     Alert.alert(
-      'Presensi Berhasil! ✓',
-      `Face Recognition Absen ${attendanceType.toUpperCase()} (${modeTitle}) berhasil diverifikasi di Area RSJ Tampan pada ${time} WIB.`
+      'Presensi Berhasil!',
+      `Face Recognition Absen ${targetType.toUpperCase()} (${modeTitle}) berhasil diverifikasi di Area RSJ Tampan pada ${time} WIB.`
     );
   };
 
@@ -200,7 +251,7 @@ export default function App() {
     setAttendance(freshAttendance);
     await storageService.saveAttendance(freshAttendance);
     Alert.alert(
-      'Presensi Direset! ✓',
+      'Presensi Direset!',
       'Status presensi hari ini telah direset. Tombol Absen Masuk & Pulang kini aktif kembali.'
     );
   };
@@ -246,7 +297,7 @@ export default function App() {
               activeOpacity={0.7}
               onPress={() => setDrawerOpen(true)}
             >
-              <Text style={[styles.menuText, { color: theme.textMain }]}>☰ Menu</Text>
+              <Text style={[styles.menuText, { color: theme.textMain }]}>Menu</Text>
             </TouchableOpacity>
 
             {/* Back Button if not on dashboard */}
@@ -273,13 +324,18 @@ export default function App() {
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TouchableOpacity
-              style={[styles.notification, { backgroundColor: theme.pillBg, borderColor: theme.border }]}
+              style={[
+                styles.notification,
+                { width: 'auto', paddingHorizontal: 10, backgroundColor: theme.pillBg, borderColor: theme.border },
+              ]}
               activeOpacity={0.7}
               onPress={handleToggleDarkMode}
               accessibilityLabel="Ganti Tema Gelap / Terang"
               title="Ganti Tema Gelap / Terang"
             >
-              <Text style={{ fontSize: 16 }}>{isDarkMode ? '🌙' : '☀️'}</Text>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: theme.textMain }}>
+                {isDarkMode ? 'Gelap' : 'Terang'}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -287,7 +343,7 @@ export default function App() {
               activeOpacity={0.7}
               onPress={() => Alert.alert('Notifikasi', 'Tidak ada notifikasi penting saat ini.')}
             >
-              <Text style={{ fontSize: 16 }}>🔔</Text>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: theme.textSub }}>Info</Text>
             </TouchableOpacity>
           </View>
         </View>

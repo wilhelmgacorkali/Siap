@@ -83,7 +83,7 @@ export default function AttendanceScreen({
   // Definisi 3 Pola Presensi Dording (Sesuai Infografis Resmi RSJ Tampan)
   const DORDING_CONFIG = {
     pagi_siang: {
-      label: 'Pagi ➔ Siang/Sore',
+      label: 'Pagi -> Siang/Sore',
       sublabel: 'Peralihan Shift Pagi ke Siang',
       shift1Name: 'Shift Pagi',
       shift2Name: 'Shift Siang (Dording)',
@@ -97,7 +97,7 @@ export default function AttendanceScreen({
       pulangLimit: 20 * 60,
     },
     siang_malam: {
-      label: 'Siang/Sore ➔ Malam',
+      label: 'Siang/Sore -> Malam',
       sublabel: 'Peralihan Shift Sore ke Malam',
       shift1Name: 'Shift Sore',
       shift2Name: 'Shift Malam (Dording)',
@@ -111,7 +111,7 @@ export default function AttendanceScreen({
       pulangLimit: 8 * 60,
     },
     malam_pagi: {
-      label: 'Malam ➔ Pagi',
+      label: 'Malam -> Pagi',
       sublabel: 'Peralihan Shift Malam ke Pagi',
       shift1Name: 'Shift Malam',
       shift2Name: 'Shift Pagi (Dording)',
@@ -142,7 +142,7 @@ export default function AttendanceScreen({
         ...storedScore,
         code: storedScore.code || (storedScore.percentage >= 100 ? (type === 'masuk' ? 'SWM' : 'SWP') : 'TL'),
         potongan: storedScore.potongan || (storedScore.percentage >= 100 ? '0.00%' : `${100 - storedScore.percentage}%`),
-        icon: storedScore.icon || (storedScore.percentage >= 100 ? '✓' : '⏱️'),
+        icon: storedScore.icon || '',
         bg: storedScore.bg || storedScore.badgeBg || (storedScore.percentage >= 100 ? '#ecfdf5' : '#fffbeb'),
       };
     }
@@ -165,7 +165,7 @@ export default function AttendanceScreen({
           color: '#16a34a',
           bg: '#ecfdf5',
           borderColor: '#16a34a',
-          icon: '✓',
+          icon: '',
         };
       } else {
         const late = totalMinutes - limit;
@@ -187,7 +187,7 @@ export default function AttendanceScreen({
           color: p >= 80 ? '#d97706' : '#dc2626',
           bg: p >= 80 ? '#fffbeb' : '#fef2f2',
           borderColor: p >= 80 ? '#f59e0b' : '#ef4444',
-          icon: '⏱️',
+          icon: '',
         };
       }
     } else {
@@ -202,7 +202,7 @@ export default function AttendanceScreen({
           color: '#16a34a',
           bg: '#ecfdf5',
           borderColor: '#16a34a',
-          icon: '✓',
+          icon: '',
         };
       } else {
         const early = limit - totalMinutes;
@@ -216,7 +216,7 @@ export default function AttendanceScreen({
           color: '#d97706',
           bg: '#fffbeb',
           borderColor: '#f59e0b',
-          icon: '⏱️',
+          icon: '',
         };
       }
     }
@@ -289,7 +289,7 @@ export default function AttendanceScreen({
                 color: !isDording ? '#ffffff' : (theme?.textMain || '#475569'),
               }}
             >
-              🟦 Presensi (Shift 1)
+              Presensi (Shift 1)
             </Text>
             <Text
               style={{
@@ -299,7 +299,7 @@ export default function AttendanceScreen({
                 fontWeight: '600',
               }}
             >
-              {s1Masuk ? `✓ Masuk ${s1Masuk}` : 'Belum Absen Masuk'}
+              {s1Masuk ? `Masuk ${s1Masuk}` : 'Belum Absen Masuk'}
             </Text>
           </TouchableOpacity>
 
@@ -321,7 +321,7 @@ export default function AttendanceScreen({
                 color: isDording ? '#ffffff' : (theme?.textMain || '#475569'),
               }}
             >
-              🟨 Presensi Dording (Shift 2)
+              Presensi Dording (Shift 2)
             </Text>
             <Text
               style={{
@@ -331,7 +331,7 @@ export default function AttendanceScreen({
                 fontWeight: '600',
               }}
             >
-              {s2Masuk ? `✓ Masuk ${s2Masuk}` : 'Belum Absen Masuk'}
+              {s2Masuk ? `Masuk ${s2Masuk}` : 'Belum Absen Masuk'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -358,7 +358,7 @@ export default function AttendanceScreen({
                 : (activeDarkMode ? '#34d399' : '#065f46'),
             }}
           >
-            🏥 {isDording ? `Presensi Dording (${currentCfg.label})` : 'Presensi Sekarang (Tilok RSJ Tampan)'}
+            {isDording ? `Presensi Dording (${currentCfg.label})` : 'Presensi Sekarang (Tilok RSJ Tampan)'}
           </Text>
           <Text
             style={{
@@ -386,7 +386,7 @@ export default function AttendanceScreen({
                 marginBottom: 6,
               }}
             >
-              🔄 Pilih Alur Peralihan Shift Dording:
+              Pilih Alur Peralihan Shift Dording:
             </Text>
             <View style={{ flexDirection: 'row', gap: 6 }}>
               {Object.keys(DORDING_CONFIG).map((key) => {
@@ -509,7 +509,7 @@ export default function AttendanceScreen({
                     color: '#dc2626',
                   }}
                 >
-                  🔄 Reset Hari Ini
+                  Reset Hari Ini
                 </Text>
               </TouchableOpacity>
             )}
@@ -531,7 +531,7 @@ export default function AttendanceScreen({
                   color: theme?.textMain || '#0f172a',
                 }}
               >
-                📍 GPS
+                GPS
               </Text>
             </TouchableOpacity>
           </View>
@@ -595,7 +595,7 @@ export default function AttendanceScreen({
               onPress={() => handleOpenAbsen('masuk')}
             >
               <Text style={styles.actionText}>
-                {attendance?.masuk ? '✓ Sudah Masuk' : '📥 Absen Masuk'}
+                {attendance?.masuk ? 'Sudah Masuk' : 'Absen Masuk'}
               </Text>
             </TouchableOpacity>
 
@@ -694,9 +694,8 @@ export default function AttendanceScreen({
                     borderTopColor: theme?.borderSubtle || '#f1f5f9',
                   }}
                 >
-                  <Text style={{ fontSize: 10 }}>📷</Text>
                   <Text style={{ fontSize: 9.5, color: '#16a34a', fontWeight: '800' }}>
-                    Face Recognition: 99.4% ✓
+                    Face Recognition: 99.4% (Valid)
                   </Text>
                 </View>
               )}
@@ -717,7 +716,7 @@ export default function AttendanceScreen({
               onPress={() => handleOpenAbsen('pulang')}
             >
               <Text style={styles.actionText}>
-                {attendance?.pulang ? '✓ Sudah Pulang' : '📤 Absen Pulang'}
+                {attendance?.pulang ? 'Sudah Pulang' : 'Absen Pulang'}
               </Text>
             </TouchableOpacity>
 
@@ -820,9 +819,8 @@ export default function AttendanceScreen({
                     borderTopColor: theme?.borderSubtle || '#f1f5f9',
                   }}
                 >
-                  <Text style={{ fontSize: 10 }}>📷</Text>
                   <Text style={{ fontSize: 9.5, color: '#16a34a', fontWeight: '800' }}>
-                    Face Recognition: 99.4% ✓
+                    Face Recognition: 99.4% (Valid)
                   </Text>
                 </View>
               )}
@@ -1051,7 +1049,7 @@ export default function AttendanceScreen({
                 color: theme?.textMain || (activeDarkMode ? '#ffffff' : '#0f172a'),
               }}
             >
-              ⚡ Teknis Presensi Dording
+              Teknis Presensi Dording
             </Text>
             <View style={{ flexDirection: 'row', gap: 6 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -1160,7 +1158,7 @@ export default function AttendanceScreen({
                     color: s1Masuk ? '#15803d' : (theme?.textMuted || '#94a3b8'),
                   }}
                 >
-                  {s1Masuk ? `✓ Selesai (${s1Masuk})` : '⏳ Belum'}
+                  {s1Masuk ? `Selesai (${s1Masuk})` : 'Belum'}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -1224,7 +1222,7 @@ export default function AttendanceScreen({
                     color: s2Masuk ? '#15803d' : (theme?.textMuted || '#94a3b8'),
                   }}
                 >
-                  {s2Masuk ? `✓ Selesai (${s2Masuk})` : '⏳ Belum'}
+                  {s2Masuk ? `Selesai (${s2Masuk})` : 'Belum'}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -1288,7 +1286,7 @@ export default function AttendanceScreen({
                     color: s1Pulang ? '#15803d' : (theme?.textMuted || '#94a3b8'),
                   }}
                 >
-                  {s1Pulang ? `✓ Selesai (${s1Pulang})` : '⏳ Belum'}
+                  {s1Pulang ? `Selesai (${s1Pulang})` : 'Belum'}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -1352,7 +1350,7 @@ export default function AttendanceScreen({
                     color: s2Pulang ? '#15803d' : (theme?.textMuted || '#94a3b8'),
                   }}
                 >
-                  {s2Pulang ? `✓ Selesai (${s2Pulang})` : '⏳ Belum'}
+                  {s2Pulang ? `Selesai (${s2Pulang})` : 'Belum'}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -1433,7 +1431,7 @@ export default function AttendanceScreen({
                     marginBottom: 8,
                   }}
                 >
-                  <Text style={{ fontSize: 26 }}>⚠️</Text>
+                  <Text style={{ fontSize: 22, fontWeight: '900', color: '#f97316' }}>!</Text>
                 </View>
                 <Text
                   style={{
@@ -1481,7 +1479,7 @@ export default function AttendanceScreen({
                     marginTop: 6,
                   }}
                 >
-                  💡 Jika Anda masih di jalan menuju kantor atau sedang dinas luar, silakan gunakan menu Presensi Diluar Tilok (PDT) dengan menyertakan alasan & foto bukti perjalanan.
+                  Jika Anda masih di jalan menuju kantor atau sedang dinas luar, silakan gunakan menu Presensi Diluar Tilok (PDT) dengan menyertakan alasan & foto bukti perjalanan.
                 </Text>
               </View>
 
@@ -1500,7 +1498,7 @@ export default function AttendanceScreen({
                   }}
                 >
                   <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 13 }}>
-                    🚗 Beralih ke Presensi Diluar Tilok (PDT) ➔
+                    Beralih ke Presensi Diluar Tilok (PDT)
                   </Text>
                 </TouchableOpacity>
 
@@ -1518,7 +1516,7 @@ export default function AttendanceScreen({
                   }}
                 >
                   <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 12 }}>
-                    🏢 Simulasi Dalam Tilok (14m) & Lanjut Absen
+                    Simulasi Dalam Tilok (14m) & Lanjut Absen
                   </Text>
                 </TouchableOpacity>
 

@@ -389,7 +389,7 @@ export default function PdtScreen({
       const errMsg = 'Harap ambil foto bukti kondisi jalan terlebih dahulu atau pilih file foto!';
       setFormError(errMsg);
       if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
-        window.alert('⚠️ Foto Bukti Diperlukan\n\n' + errMsg);
+        window.alert('Foto Bukti Diperlukan\n\n' + errMsg);
       } else {
         Alert.alert('Foto Bukti Diperlukan', errMsg);
       }
@@ -409,7 +409,7 @@ export default function PdtScreen({
       label: absenType === 'masuk' ? 'Masuk (Luar Tilok)' : 'Pulang (Luar Tilok)',
       percentage: 100,
       potongan: '0.00%',
-      icon: '🚗',
+      icon: '',
       bg: '#fff7ed',
       color: '#c2410c',
       reason: alasan,
@@ -442,9 +442,9 @@ export default function PdtScreen({
       setSuccessMessage(successText);
 
       if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
-        window.alert(`✓ Presensi PDT Berhasil Disimpan!\n\n${successText}\n\nAlasan: ${alasan}`);
+        window.alert(`Presensi PDT Berhasil Disimpan!\n\n${successText}\n\nAlasan: ${alasan}`);
       } else {
-        Alert.alert('Presensi PDT Berhasil Disimpan! ✓', successText);
+        Alert.alert('Presensi PDT Berhasil Disimpan!', successText);
       }
     } catch (err) {
       console.error('Submit PDT error:', err);
@@ -466,13 +466,10 @@ export default function PdtScreen({
         {successMessage && (
           <View style={styles.successBanner}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-              <View style={styles.successIconBadge}>
-                <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: 'bold' }}>✓</Text>
-              </View>
               <Text style={styles.successBannerText}>{successMessage}</Text>
             </View>
             <TouchableOpacity onPress={() => setSuccessMessage(null)} style={{ padding: 4 }}>
-              <Text style={{ color: '#047857', fontSize: 13, fontWeight: 'bold' }}>✕</Text>
+              <Text style={{ color: '#047857', fontSize: 13, fontWeight: 'bold' }}>X</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -480,9 +477,6 @@ export default function PdtScreen({
         {/* Banner Merah Khas SIAP RSJ Tampan (Screenshot 1) */}
         <View style={styles.redBanner}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={styles.redBannerIcon}>
-              <Text style={{ color: '#ffffff', fontSize: 13, fontWeight: '900' }}>📍</Text>
-            </View>
             <View>
               <Text style={styles.redBannerTitle}>Presensi Diluar Tilok (PDT)</Text>
               <Text style={styles.redBannerSub}>
@@ -527,7 +521,7 @@ export default function PdtScreen({
                         simulatedDistance === 1150 && styles.switchPillTextActive,
                       ]}
                     >
-                      🚗 Di Jalan (1.1 km - Luar Radius)
+                      Di Jalan (1.1 km - Luar Radius)
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -543,7 +537,7 @@ export default function PdtScreen({
                         simulatedDistance === 14 && styles.switchPillTextActive,
                       ]}
                     >
-                      🏢 Di Kantor (14m)
+                      Di Kantor (14m)
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -570,7 +564,6 @@ export default function PdtScreen({
                   disabled={!!pdtData.masuk}
                   onPress={() => handleOpenAbsen('masuk')}
                 >
-                  <Text style={styles.btnActionIcon}>✓</Text>
                   <Text style={styles.btnActionText}>Absen Masuk</Text>
                 </TouchableOpacity>
 
@@ -579,7 +572,7 @@ export default function PdtScreen({
                   {pdtData.masuk ? (
                     <View style={{ alignItems: 'center' }}>
                       <Text style={styles.indicatorStatusDone}>
-                        ✓ Jam: {pdtData.masuk}
+                        Jam: {pdtData.masuk}
                       </Text>
                       <Text style={{ fontSize: 9.5, color: '#047857', fontWeight: '700' }}>
                         Tercatat (PDT 100%)
@@ -610,7 +603,7 @@ export default function PdtScreen({
                   {pdtData.pulang ? (
                     <View style={{ alignItems: 'center' }}>
                       <Text style={styles.indicatorStatusDone}>
-                        ✓ Jam: {pdtData.pulang}
+                        Jam: {pdtData.pulang}
                       </Text>
                       <Text style={{ fontSize: 9.5, color: '#b45309', fontWeight: '700' }}>
                         Tercatat (PDT 100%)
@@ -663,7 +656,7 @@ export default function PdtScreen({
 
               {/* Konfigurasi Radius Titik Lokasi Resmi (Foto 2) */}
               <View style={styles.tilokConfigBox}>
-                <Text style={styles.tilokConfigTitle}>🎯 Titik Valid RSJ Tampan (Foto 2)</Text>
+                <Text style={styles.tilokConfigTitle}>Titik Valid RSJ Tampan (Foto 2)</Text>
                 <View style={styles.tilokConfigGrid}>
                   <View style={styles.tilokParam}>
                     <Text style={styles.tilokParamLabel}>Latitude</Text>
@@ -693,7 +686,7 @@ export default function PdtScreen({
             <View style={styles.guideCard}>
               <View style={styles.guideHeader}>
                 <Text style={styles.guideTitle}>
-                  📄 Panduan Presensi Luar Tilok (PDT)
+                  Panduan Presensi Luar Tilok (PDT)
                 </Text>
                 <Text style={styles.guideSubtitle}>
                   Standar Operasional Prosedur (SOP) SIMRS RSJ Tampan
@@ -769,7 +762,7 @@ export default function PdtScreen({
               <View style={styles.modalHeader}>
                 <View>
                   <Text style={styles.modalTitle}>
-                    🚗 Verifikasi Presensi Luar Tilok (PDT)
+                    Verifikasi Presensi Luar Tilok (PDT)
                   </Text>
                   <Text style={styles.modalSub}>
                     Absen {absenType === 'masuk' ? 'Masuk' : 'Pulang'} • {todayFormatted} ({clockToDisplay} WIB)
@@ -782,14 +775,14 @@ export default function PdtScreen({
                   }}
                   style={styles.closeBtn}
                 >
-                  <Text style={{ color: '#64748b', fontSize: 16, fontWeight: 'bold' }}>✕</Text>
+                  <Text style={{ color: '#64748b', fontSize: 16, fontWeight: 'bold' }}>X</Text>
                 </TouchableOpacity>
               </View>
 
               <ScrollView style={{ maxHeight: 520 }} showsVerticalScrollIndicator={false}>
                 {/* Status Geofencing Warning */}
                 <View style={styles.geofenceNotice}>
-                  <Text style={{ fontSize: 18 }}>⚠️</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '900', color: '#ea580c' }}>!</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.geofenceNoticeTitle}>
                       Terdeteksi Di Luar Radius Tilok ({simulatedDistance} meter)
@@ -817,7 +810,7 @@ export default function PdtScreen({
                           simulatedTimePreset === 'live' && styles.timePresetTextActive,
                         ]}
                       >
-                        ⏱️ Jam Sekarang ({clockToDisplay})
+                        Jam Sekarang ({clockToDisplay})
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -833,7 +826,7 @@ export default function PdtScreen({
                           simulatedTimePreset === 'ontime' && styles.timePresetTextActive,
                         ]}
                       >
-                        ⭐ Tepat Waktu ({absenType === 'masuk' ? '07:45' : '16:05'})
+                        Tepat Waktu ({absenType === 'masuk' ? '07:45' : '16:05'})
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -899,7 +892,7 @@ export default function PdtScreen({
                       <Image source={{ uri: fotoBukti }} style={styles.previewImage} />
                       <View style={styles.previewMeta}>
                         <Text style={{ fontSize: 11, fontWeight: '800', color: '#047857' }}>
-                          ✓ Foto Bukti Berhasil Dilampirkan
+                          Foto Bukti Berhasil Dilampirkan
                         </Text>
                         <TouchableOpacity
                           style={styles.btnRetake}
@@ -909,7 +902,7 @@ export default function PdtScreen({
                           }}
                         >
                           <Text style={{ fontSize: 11, fontWeight: '700', color: '#dc2626' }}>
-                            Ambil Ulang ↺
+                            Ambil Ulang
                           </Text>
                         </TouchableOpacity>
                       </View>
@@ -952,7 +945,7 @@ export default function PdtScreen({
                               </View>
                               <View style={styles.facingBadge}>
                                 <Text style={styles.facingBadgeText}>
-                                  {facingMode === 'user' ? '👤 Depan' : '🛣️ Belakang (Jalan)'}
+                                  {facingMode === 'user' ? 'Kamera Depan' : 'Kamera Belakang'}
                                 </Text>
                               </View>
                             </View>
@@ -964,7 +957,7 @@ export default function PdtScreen({
                               style={styles.btnCapture}
                               onPress={handleCapturePhoto}
                             >
-                              <Text style={styles.btnCaptureText}>📸 Ambil Foto Bukti Sekarang</Text>
+                              <Text style={styles.btnCaptureText}>Ambil Foto Bukti Sekarang</Text>
                             </TouchableOpacity>
 
                             {Platform.OS === 'web' && (
@@ -972,7 +965,7 @@ export default function PdtScreen({
                                 style={styles.btnFlipCamera}
                                 onPress={handleToggleFacingMode}
                               >
-                                <Text style={styles.btnFlipCameraText}>🔄 Putar</Text>
+                                <Text style={styles.btnFlipCameraText}>Putar Kamera</Text>
                               </TouchableOpacity>
                             )}
 
@@ -980,7 +973,7 @@ export default function PdtScreen({
                               style={styles.btnCancelCamera}
                               onPress={stopCamera}
                             >
-                              <Text style={styles.btnCancelCameraText}>✕ Batal</Text>
+                              <Text style={styles.btnCancelCameraText}>Batal</Text>
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -988,7 +981,6 @@ export default function PdtScreen({
                         <View style={{ alignItems: 'center', padding: 12, width: '100%' }}>
                           {isCameraLoading ? (
                             <View style={{ alignItems: 'center', paddingVertical: 14 }}>
-                              <Text style={{ fontSize: 26, marginBottom: 6 }}>⏳</Text>
                               <Text style={{ fontSize: 12, fontWeight: '700', color: '#0284c7' }}>
                                 Menghubungkan ke Kamera...
                               </Text>
@@ -998,7 +990,6 @@ export default function PdtScreen({
                             </View>
                           ) : (
                             <>
-                              <Text style={{ fontSize: 28 }}>📷</Text>
                               <Text style={{ fontSize: 12, fontWeight: '700', color: '#334155', marginTop: 4 }}>
                                 Ambil atau Unggah Foto Bukti
                               </Text>
@@ -1011,12 +1002,12 @@ export default function PdtScreen({
                                   style={styles.btnStartCamera}
                                   onPress={() => startCamera('user')}
                                 >
-                                  <Text style={styles.btnStartCameraText}>📸 Buka Kamera Langsung</Text>
+                                  <Text style={styles.btnStartCameraText}>Buka Kamera Langsung</Text>
                                 </TouchableOpacity>
 
                                 {Platform.OS === 'web' && (
                                   <label style={styles.btnUploadFile}>
-                                    <Text style={styles.btnUploadFileText}>📁 Pilih File Foto</Text>
+                                    <Text style={styles.btnUploadFileText}>Pilih File Foto</Text>
                                     <input
                                       type="file"
                                       accept="image/*"
@@ -1033,7 +1024,7 @@ export default function PdtScreen({
 
                       {cameraError && (
                         <View style={styles.cameraErrorBox}>
-                          <Text style={{ fontSize: 13, marginRight: 6 }}>⚠️</Text>
+                          <Text style={{ fontSize: 13, marginRight: 6, fontWeight: 'bold', color: '#dc2626' }}>!</Text>
                           <Text style={styles.cameraErrorText}>
                             {cameraError}
                           </Text>
@@ -1046,13 +1037,13 @@ export default function PdtScreen({
                 {/* Validasi Titik Tilok Resmi Sistem (Foto 2) */}
                 <View style={styles.validPointCard}>
                   <Text style={{ fontSize: 11, fontWeight: '800', color: '#0f172a' }}>
-                    🎯 Data Titik Radius Resmi RS Jiwa Tampan (Foto 2):
+                    Data Titik Radius Resmi RS Jiwa Tampan (Foto 2):
                   </Text>
                   <Text style={{ fontSize: 10.5, color: '#475569', marginTop: 2 }}>
                     Koordinat: {TILOK_RESMI.latitude}° N, {TILOK_RESMI.longitude}° E | Radius: {TILOK_RESMI.radius} meter
                   </Text>
                   <Text style={{ fontSize: 10, color: '#059669', fontWeight: '700', marginTop: 2 }}>
-                    ✓ Data koordinat dan bukti foto perjalanan akan disimpan sebagai bukti sah PDT.
+                    Data koordinat dan bukti foto perjalanan akan disimpan sebagai bukti sah PDT.
                   </Text>
                 </View>
               </ScrollView>
@@ -1061,7 +1052,7 @@ export default function PdtScreen({
               <View style={styles.modalFooter}>
                 {formError && (
                   <View style={styles.formErrorBox}>
-                    <Text style={{ fontSize: 13, marginRight: 6 }}>⚠️</Text>
+                    <Text style={{ fontSize: 13, marginRight: 6, fontWeight: 'bold', color: '#dc2626' }}>!</Text>
                     <Text style={styles.formErrorText}>{formError}</Text>
                   </View>
                 )}
@@ -1074,7 +1065,7 @@ export default function PdtScreen({
                   <Text style={styles.btnSubmitPdtText}>
                     {isSubmitting
                       ? 'Sedang Menyimpan Presensi PDT...'
-                      : 'Simpan & Kirim Presensi Luar Tilok (PDT) ✓'}
+                      : 'Simpan & Kirim Presensi Luar Tilok (PDT)'}
                   </Text>
                 </TouchableOpacity>
               </View>

@@ -134,7 +134,6 @@ export default function TilokMap({
       {/* Header Info Peta & Tilok */}
       <View style={mapStyles.headerRow}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-          <Text style={{ fontSize: 16 }}>📍</Text>
           <View>
             <Text style={mapStyles.title}>Peta Tilok & Radius Presensi</Text>
             <Text style={mapStyles.subTitle}>RS Jiwa Tampan (Lat: {latitude}, Long: {longitude})</Text>
@@ -161,7 +160,6 @@ export default function TilokMap({
           />
         ) : (
           <View style={mapStyles.fallbackMap}>
-            <Text style={{ fontSize: 36 }}>🗺️</Text>
             <Text style={mapStyles.fallbackText}>Peta Tilok RSJ Tampan</Text>
             <Text style={mapStyles.fallbackSub}>Koordinat: {latitude}° N, {longitude}° E</Text>
           </View>
@@ -184,8 +182,8 @@ export default function TilokMap({
       <View style={[mapStyles.statusCard, isOutsideRadius && mapStyles.statusCardWarning]}>
         <View style={mapStyles.statusLeft}>
           <View style={[mapStyles.validIconWrap, isOutsideRadius && mapStyles.warningIconWrap]}>
-            <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '900' }}>
-              {isOutsideRadius ? '!' : '✓'}
+            <Text style={{ color: '#ffffff', fontSize: 10, fontWeight: '900' }}>
+              {isOutsideRadius ? '!' : 'OK'}
             </Text>
           </View>
           <View style={{ flex: 1 }}>
@@ -228,10 +226,10 @@ export default function TilokMap({
       {/* Koordinat & Akurasi GPS */}
       <View style={mapStyles.coordsRow}>
         <Text style={mapStyles.coordText}>
-          📍 Titik Valid: {latitude}° N, {longitude}° E (200m)
+          Titik Valid: {latitude}° N, {longitude}° E (200m)
         </Text>
         <Text style={[mapStyles.accuracyText, isOutsideRadius && { color: '#ea580c' }]}>
-          {isOutsideRadius ? '⚠️ Status: Luar Radius' : '✓ Status: Dalam Tilok'}
+          {isOutsideRadius ? 'Status: Luar Radius' : 'Status: Dalam Tilok'}
         </Text>
       </View>
     </View>

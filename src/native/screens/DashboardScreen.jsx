@@ -27,7 +27,7 @@ const MONTHS_FULL_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
 
 // Roster matching Screenshot 1 (Bulan 10 / 2026)
 const DEFAULT_JADWAL_DINAS = {
-  1: 'C', 2: 'C', 3: 'L', 4: 'L', 5: 'P', 6: 'P', 7: 'P', 8: 'L', 9: 'L',
+  1: 'L', 2: 'C', 3: 'L', 4: 'L', 5: 'P', 6: 'P', 7: 'P', 8: 'L', 9: 'L',
   10: 'P', 11: 'P', 12: 'P', 13: 'P', 14: 'P', 15: 'P', 16: 'P', 17: 'L', 18: 'L',
   19: 'P', 20: 'P', 21: 'P', 22: 'P', 23: 'P', 24: 'L', 25: 'L', 26: 'P', 27: 'P',
   28: 'P', 29: 'P', 30: 'P', 31: 'L'
@@ -35,7 +35,7 @@ const DEFAULT_JADWAL_DINAS = {
 
 // Dording Roster matching Screenshot 2 (Bulan 10 / 2026: mostly '-' with occasional D)
 const DEFAULT_JADWAL_DORDING = {
-  1: '-', 2: '-', 3: '-', 4: '-', 5: '-', 6: '-', 7: '-', 8: '-', 9: '-',
+  1: '-', 2: 'L', 3: '-', 4: '-', 5: '-', 6: '-', 7: '-', 8: '-', 9: '-',
   10: 'D', 11: '-', 12: '-', 13: '-', 14: '-', 15: '-', 16: 'D', 17: '-', 18: '-',
   19: '-', 20: '-', 21: '-', 22: 'D', 23: '-', 24: '-', 25: '-', 26: '-', 27: '-',
   28: 'D', 29: '-', 30: '-', 31: '-'
@@ -109,8 +109,8 @@ export default function DashboardScreen({
 
           {/* Quick Theme Switcher (Dark / Light) */}
           <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={toggleDarkMode}
+            activeOpacity={0.75}
+            onPress={onToggleDarkMode}
             style={[
               styles.themeToggleBtn,
               {
@@ -119,7 +119,6 @@ export default function DashboardScreen({
               },
             ]}
           >
-            <Text style={{ fontSize: 14 }}>{activeDarkMode ? '🌙' : '☀️'}</Text>
             <Text style={[styles.themeToggleText, { color: theme.textMain }]}>
               {activeDarkMode ? 'Tema Gelap' : 'Tema Terang'}
             </Text>
@@ -166,7 +165,6 @@ export default function DashboardScreen({
           >
             <View style={styles.actionCardContent}>
               <View style={styles.actionCardTitleRow}>
-                <Text style={styles.actionCardIconWhite}>🔏</Text>
                 <Text style={styles.actionCardTitleWhite}>Presensi Sekarang</Text>
               </View>
               <Text style={styles.actionCardSubtitleWhite}>
@@ -174,7 +172,7 @@ export default function DashboardScreen({
               </Text>
               <View style={styles.actionCardBadge}>
                 <Text style={styles.actionCardBadgeText}>
-                  {attendance?.masuk ? `✓ Masuk: ${attendance.masuk}` : 'Shift 1 / Reguler RS'}
+                  {attendance?.masuk ? `Masuk: ${attendance.masuk}` : 'Shift 1 / Reguler RS'}
                 </Text>
               </View>
             </View>
@@ -188,7 +186,6 @@ export default function DashboardScreen({
           >
             <View style={styles.actionCardContent}>
               <View style={styles.actionCardTitleRow}>
-                <Text style={styles.actionCardIconWhite}>📊</Text>
                 <Text style={styles.actionCardTitleWhite}>Rekap Absensi</Text>
               </View>
               <Text style={styles.actionCardSubtitleWhite}>
@@ -208,7 +205,6 @@ export default function DashboardScreen({
           >
             <View style={styles.actionCardContent}>
               <View style={styles.actionCardTitleRow}>
-                <Text style={styles.actionCardIconWhite}>🔏</Text>
                 <Text style={styles.actionCardTitleWhite}>Presensi Diluar Tilok (PDT)</Text>
               </View>
               <Text style={styles.actionCardSubtitleWhite}>
@@ -228,7 +224,6 @@ export default function DashboardScreen({
           >
             <View style={styles.actionCardContent}>
               <View style={styles.actionCardTitleRow}>
-                <Text style={styles.actionCardIconDark}>🔏</Text>
                 <Text style={styles.actionCardTitleDark}>Presensi Dording</Text>
               </View>
               <Text style={styles.actionCardSubtitleDark}>
@@ -236,7 +231,7 @@ export default function DashboardScreen({
               </Text>
               <View style={styles.actionCardBadgeDark}>
                 <Text style={styles.actionCardBadgeTextDark}>
-                  {dordingAttendance?.masuk ? `✓ Masuk: ${dordingAttendance.masuk}` : 'Dinas Sambung (Shift 2)'}
+                  {dordingAttendance?.masuk ? `Masuk: ${dordingAttendance.masuk}` : 'Dinas Sambung (Shift 2)'}
                 </Text>
               </View>
             </View>
@@ -268,7 +263,6 @@ export default function DashboardScreen({
               },
             ]}
           >
-            <Text style={{ fontSize: 16 }}>📅</Text>
             <Text
               style={[
                 styles.calendarCardTitle,
@@ -382,7 +376,6 @@ export default function DashboardScreen({
               },
             ]}
           >
-            <Text style={{ fontSize: 16 }}>🚩</Text>
             <Text
               style={[
                 styles.calendarCardTitle,
@@ -468,7 +461,7 @@ export default function DashboardScreen({
           </Text>
           <View style={styles.footerLinkRow}>
             <Text style={[styles.footerSubText, { color: theme.textMuted }]}>
-              🌐 siap.rsjiwatampan.com
+              siap.rsjiwatampan.com
             </Text>
           </View>
         </View>
@@ -508,7 +501,7 @@ export default function DashboardScreen({
                   style={[styles.modalCloseBtn, { backgroundColor: theme.pillBg }]}
                   onPress={() => setSelectedDayDetail(null)}
                 >
-                  <Text style={{ color: theme.textMain, fontSize: 16, fontWeight: 'bold' }}>✕</Text>
+                  <Text style={{ color: theme.textMain, fontSize: 16, fontWeight: 'bold' }}>X</Text>
                 </TouchableOpacity>
               </View>
 

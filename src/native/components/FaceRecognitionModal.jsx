@@ -8,6 +8,7 @@ import {
   View,
   Dimensions,
 } from 'react-native';
+import { generateBiometricPhoto } from '../biometricPhoto';
 
 export default function FaceRecognitionModal({
   visible,
@@ -188,7 +189,7 @@ export default function FaceRecognitionModal({
           badgeBg: '#ecfdf5',
           bg: '#ecfdf5',
           borderColor: '#16a34a',
-          icon: '✓',
+          icon: '',
         };
       } else {
         const late = totalMinutes - limit;
@@ -211,7 +212,7 @@ export default function FaceRecognitionModal({
           badgeBg: p >= 80 ? '#fffbeb' : '#fef2f2',
           bg: p >= 80 ? '#fffbeb' : '#fef2f2',
           borderColor: p >= 80 ? '#f59e0b' : '#ef4444',
-          icon: '⏱️',
+          icon: '',
         };
       }
     } else {
@@ -228,7 +229,7 @@ export default function FaceRecognitionModal({
           badgeBg: '#ecfdf5',
           bg: '#ecfdf5',
           borderColor: '#16a34a',
-          icon: '✓',
+          icon: '',
         };
       } else {
         const early = limit - totalMinutes;
@@ -243,7 +244,7 @@ export default function FaceRecognitionModal({
           badgeBg: '#fffbeb',
           bg: '#fffbeb',
           borderColor: '#f59e0b',
-          icon: '⏱️',
+          icon: '',
         };
       }
     }
@@ -275,38 +276,25 @@ export default function FaceRecognitionModal({
       }
     } catch (e) {}
 
-    // Snap photo from real webcam or generate simulated biometric frame
+    // Snap photo from real webcam or generate verified biometric frame
     setTimeout(() => {
       let photoUrl = null;
-      if (cameraActive && videoRef.current) {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = 480;
-          canvas.height = 480;
-          const ctx = canvas.getContext('2d');
-          // Crop square center
-          const minDim = Math.min(videoRef.current.videoWidth, videoRef.current.videoHeight);
-          const sx = (videoRef.current.videoWidth - minDim) / 2;
-          const sy = (videoRef.current.videoHeight - minDim) / 2;
-          ctx.drawImage(videoRef.current, sx, sy, minDim, minDim, 0, 0, 480, 480);
-
-          // Add official watermark stamp
-          ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
-          ctx.fillRect(0, 400, 480, 80);
-          ctx.fillStyle = '#38bdf8';
-          ctx.font = 'bold 16px sans-serif';
-          ctx.fillText('RS JIWA TAMPAN - PEKANBARU', 14, 424);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = '13px monospace';
-          ctx.fillText(`GPS: 0.465791N, 101.381957E | R:200m | ${currentSimulatedTime} WIB`, 14, 446);
-          ctx.fillStyle = '#4ade80';
-          ctx.font = 'bold 13px sans-serif';
-          ctx.fillText(`VALID: Face Match 99.4% | ${user?.name?.slice(0, 24)}`, 14, 468);
-
-          photoUrl = canvas.toDataURL('image/jpeg', 0.85);
-        } catch (err) {
-          console.log('Capture error:', err);
-        }
+      try {
+        photoUrl = generateBiometricPhoto({
+          videoEl: (cameraActive && videoRef.current) ? videoRef.current : null,
+          user,
+          type,
+          time: currentSimulatedTime,
+          date: new Intl.DateTimeFormat('id-ID', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          }).format(new Date()),
+          matchScore: `${matchScore}%`,
+          isDording,
+        });
+      } catch (err) {
+        console.warn('Capture photo error:', err);
       }
 
       setCapturedPhoto(photoUrl);
@@ -320,6 +308,7 @@ export default function FaceRecognitionModal({
           time: currentSimulatedTime,
           score: currentCalculatedScore,
           photo: photoUrl,
+          type,
         });
       }, 1000);
     }, 1500);
@@ -332,9 +321,6 @@ export default function FaceRecognitionModal({
           {/* Header */}
           <View style={modalStyles.header}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View style={modalStyles.iconCircle}>
-                <Text style={{ fontSize: 16 }}>📷</Text>
-              </View>
               <View>
                 <Text style={modalStyles.headerTitle}>Face Recognition Biometrik</Text>
                 <Text style={modalStyles.headerSub}>
@@ -343,7 +329,7 @@ export default function FaceRecognitionModal({
               </View>
             </View>
             <TouchableOpacity onPress={onClose} style={modalStyles.closeBtn}>
-              <Text style={{ color: '#94a3b8', fontSize: 16, fontWeight: 'bold' }}>✕</Text>
+              <Text style={{ color: '#94a3b8', fontSize: 16, fontWeight: 'bold' }}>X</Text>
             </TouchableOpacity>
           </View>
 
@@ -375,7 +361,9 @@ export default function FaceRecognitionModal({
               /* Simulated High-Tech Camera Avatar */
               <View style={modalStyles.avatarSimulation}>
                 <View style={modalStyles.avatarCircle}>
-                  <Text style={{ fontSize: 72 }}>👩‍⚕️</Text>
+                  <Text style={{ fontSize: 32, fontWeight: '900', color: '#0284c7' }}>
+                    {user?.name ? user.name.charAt(0) : 'P'}
+                  </Text>
                 </View>
                 <Text style={modalStyles.avatarName}>{user?.name}</Text>
                 <Text style={modalStyles.avatarNip}>NIP: {user?.nip}</Text>
@@ -397,7 +385,7 @@ export default function FaceRecognitionModal({
                     }}
                   >
                     <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>
-                      🔄 Hubungkan Kamera Sekarang
+                      Hubungkan Kamera Sekarang
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -440,9 +428,9 @@ export default function FaceRecognitionModal({
                 />
                 <Text style={modalStyles.hudTopText}>
                   {scanStep === 'scanning'
-                    ? '🔍 MENGANALISIS STRUKTUR WAJAH...'
+                    ? 'MENGANALISIS STRUKTUR WAJAH...'
                     : scanStep === 'success'
-                    ? '✓ WAJAH TERVERIFIKASI (MATCH 99.4%)'
+                    ? 'WAJAH TERVERIFIKASI (MATCH 99.4%)'
                     : 'AI FACE DETECT: SIAP MEMINDAI'}
                 </Text>
               </View>
@@ -450,10 +438,10 @@ export default function FaceRecognitionModal({
               {/* Bottom Tilok Location Stamp */}
               <View style={modalStyles.hudBottom}>
                 <Text style={modalStyles.hudLocationText}>
-                  📍 Area RSJ Tampan (Radius Tilok Valid: 14m)
+                  Area RSJ Tampan (Radius Tilok Valid: 14m)
                 </Text>
                 <Text style={modalStyles.hudTimeText}>
-                  ⏰ {currentSimulatedTime} WIB | Match: {matchScore}%
+                  {currentSimulatedTime} WIB | Match: {matchScore}%
                 </Text>
               </View>
             </View>
@@ -462,23 +450,23 @@ export default function FaceRecognitionModal({
           {/* Simulation Preset Selector: Live vs Ontime vs Late */}
           <View style={modalStyles.presetWrap}>
             <Text style={modalStyles.presetLabel}>
-              ⚡ Uji Simulasi Waktu Presensi (Mempengaruhi % Kehadiran):
+              Uji Simulasi Waktu Presensi (Mempengaruhi % Kehadiran):
             </Text>
             <View style={modalStyles.presetRow}>
               {(isDording
                 ? [
-                    { id: 'live', label: '⏰ Live Jam', time: currentTime || '13:50:00' },
-                    { id: 'ontime', label: '🟢 Tepat (100%)', time: type === 'masuk' ? '13:50:00' : '20:05:00' },
-                    { id: 'late15', label: '🟡 Telat 15m (95%)', time: type === 'masuk' ? '14:15:00' : '19:45:00' },
-                    { id: 'late30', label: '🟠 Telat 30m (90%)', time: type === 'masuk' ? '14:30:00' : '19:30:00' },
-                    { id: 'late60', label: '🔴 Telat 1j (85%)', time: type === 'masuk' ? '15:00:00' : '19:00:00' },
+                    { id: 'live', label: 'Live Jam', time: currentTime || '13:50:00' },
+                    { id: 'ontime', label: 'Tepat (100%)', time: type === 'masuk' ? '13:50:00' : '20:05:00' },
+                    { id: 'late15', label: 'Telat 15m (95%)', time: type === 'masuk' ? '14:15:00' : '19:45:00' },
+                    { id: 'late30', label: 'Telat 30m (90%)', time: type === 'masuk' ? '14:30:00' : '19:30:00' },
+                    { id: 'late60', label: 'Telat 1j (85%)', time: type === 'masuk' ? '15:00:00' : '19:00:00' },
                   ]
                 : [
-                    { id: 'live', label: '⏰ Live Jam', time: currentTime || '07:15:00' },
-                    { id: 'ontime', label: '🟢 Tepat (100%)', time: type === 'masuk' ? '07:15:00' : '16:05:00' },
-                    { id: 'late15', label: '🟡 Telat 15m (95%)', time: type === 'masuk' ? '07:45:00' : '15:45:00' },
-                    { id: 'late30', label: '🟠 Telat 30m (90%)', time: type === 'masuk' ? '08:00:00' : '15:30:00' },
-                    { id: 'late60', label: '🔴 Telat 1j (85%)', time: type === 'masuk' ? '08:30:00' : '15:00:00' },
+                    { id: 'live', label: 'Live Jam', time: currentTime || '07:15:00' },
+                    { id: 'ontime', label: 'Tepat (100%)', time: type === 'masuk' ? '07:15:00' : '16:05:00' },
+                    { id: 'late15', label: 'Telat 15m (95%)', time: type === 'masuk' ? '07:45:00' : '15:45:00' },
+                    { id: 'late30', label: 'Telat 30m (90%)', time: type === 'masuk' ? '08:00:00' : '15:30:00' },
+                    { id: 'late60', label: 'Telat 1j (85%)', time: type === 'masuk' ? '08:30:00' : '15:00:00' },
                   ]
               ).map((p) => (
                 <TouchableOpacity
@@ -552,10 +540,10 @@ export default function FaceRecognitionModal({
             >
               <Text style={modalStyles.captureBtnText}>
                 {isScanning
-                  ? '⏳ Memindai Wajah...'
+                  ? 'Memindai Wajah...'
                   : scanStep === 'success'
-                  ? '✓ Presensi Berhasil!'
-                  : '📸 Ambil Foto & Verifikasi'}
+                  ? 'Presensi Berhasil!'
+                  : 'Ambil Foto & Verifikasi'}
               </Text>
             </TouchableOpacity>
           </View>

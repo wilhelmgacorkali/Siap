@@ -21,7 +21,7 @@
     shiftSettings: {
       pagi: {
         nama: 'Shift Pagi',
-        icon: '🌅',
+        icon: '',
         masukMulai: '06:00',
         masukSelesai: '07:00',
         pulangMulai: '14:00',
@@ -30,7 +30,7 @@
       },
       sore: {
         nama: 'Shift Sore',
-        icon: '🌇',
+        icon: '',
         masukMulai: '13:00',
         masukSelesai: '14:00',
         pulangMulai: '20:00',
@@ -39,7 +39,7 @@
       },
       malam: {
         nama: 'Shift Malam',
-        icon: '🌙',
+        icon: '',
         masukMulai: '20:00',
         masukSelesai: '21:00',
         pulangMulai: '07:00',
@@ -48,7 +48,7 @@
       },
       dording: {
         nama: 'Shift Dording',
-        icon: '⏱️',
+        icon: '',
         masukMulai: '13:00',
         masukSelesai: '14:00',
         pulangMulai: '07:00',
@@ -67,7 +67,7 @@
     },
     todayStatus: {
       masuk: null, // e.g. '13:05:22'
-      masukScore: null, // { percentage: 100, lateMinutes: 0, statusText: 'Tepat Waktu (100%)', badgeClass: 'score-100', icon: '✓' }
+      masukScore: null, // { percentage: 100, lateMinutes: 0, statusText: 'Tepat Waktu (100%)', badgeClass: 'score-100', icon: '' }
       pulang: null,
       pulangScore: null,
       status: 'Belum Absen',
@@ -197,7 +197,7 @@
           lateMinutes: 0,
           statusText: 'Tepat Waktu (100%)',
           badgeClass: 'score-100',
-          icon: '✓',
+          icon: '',
         };
       } else {
         const late = totalMinutes - limitMinutes;
@@ -213,7 +213,7 @@
           lateMinutes: late,
           statusText: `Terlambat ${late} mnt (${score}%)`,
           badgeClass: score >= 80 ? 'score-warning' : 'score-danger',
-          icon: '⏱️',
+          icon: '',
         };
       }
     } else {
@@ -225,7 +225,7 @@
           earlyMinutes: 0,
           statusText: 'Shift Selesai Penuh (100%)',
           badgeClass: 'score-100',
-          icon: '✓',
+          icon: '',
         };
       } else {
         const early = shiftEndMinutes - totalMinutes;
@@ -235,7 +235,7 @@
           earlyMinutes: early,
           statusText: `Pulang Awal ${early} mnt (${score}%)`,
           badgeClass: 'score-warning',
-          icon: '⏱️',
+          icon: '',
         };
       }
     }
@@ -289,7 +289,7 @@
     toast.className = 'toast-container';
     toast.innerHTML = `
       <div class="toast-message ${type}">
-        <span>${type === 'success' ? '✓' : '⚠️'}</span>
+        <span>${type === 'success' ? 'OK' : '!'}</span>
         <span>${message}</span>
       </div>
     `;
@@ -360,7 +360,7 @@
       pdt: 'Presensi Luar Tilok (PDT)',
       approval_pdt: 'Approve PDT',
       pegawai: 'Data Pegawai',
-      pengaturan: '⚙️ Pengaturan Jam Absen',
+      pengaturan: 'Pengaturan Jam Absen',
     };
 
     return `
@@ -380,11 +380,11 @@
         </div>
 
         <div class="header-actions">
-          <button class="header-icon-btn" id="btn-toggle-theme" title="Ganti Tema Gelap / Terang">
-            ${state.isDarkMode ? '🌙' : '☀️'}
+          <button class="header-icon-btn" id="btn-toggle-theme" title="Ganti Tema Gelap / Terang" style="font-size:11px; font-weight:700;">
+            ${state.isDarkMode ? 'Dark' : 'Light'}
           </button>
-          <button class="header-icon-btn" id="btn-header-notif" title="Notifikasi">
-            🔔
+          <button class="header-icon-btn" id="btn-header-notif" title="Notifikasi" style="font-size:11px; font-weight:700;">
+            Info
             <span class="notif-badge"></span>
           </button>
         </div>
@@ -408,7 +408,7 @@
               <p>Sistem Absensi Pegawai</p>
             </div>
           </div>
-          <button class="sidebar-close-btn" id="btn-close-sidebar" title="Tutup Menu">✕</button>
+          <button class="sidebar-close-btn" id="btn-close-sidebar" title="Tutup Menu">X</button>
         </div>
 
         <div class="sidebar-user-card">
@@ -422,58 +422,48 @@
         <nav class="sidebar-nav">
           <div class="sidebar-section-title">Menu Utama</div>
           <button class="sidebar-nav-item ${state.currentScreen === 'dashboard' ? 'active' : ''}" data-nav="dashboard">
-            <span class="sidebar-nav-icon">🌐</span>
             <span>Beranda</span>
           </button>
           
           <button class="sidebar-nav-item ${state.currentScreen === 'presensi' && state.presensiMode === 'sekarang' ? 'active' : ''}" data-nav="presensi" data-mode="sekarang">
-            <span class="sidebar-nav-icon">🕒</span>
             <span>Presensi Sekarang</span>
           </button>
 
           <button class="sidebar-nav-item ${state.currentScreen === 'presensi' && state.presensiMode === 'dording' ? 'active' : ''}" data-nav="presensi" data-mode="dording">
-            <span class="sidebar-nav-icon">⏱️</span>
             <span>Presensi Dording</span>
           </button>
 
           <div class="sidebar-section-title">DATA</div>
           <button class="sidebar-nav-item ${state.currentScreen === 'pegawai' ? 'active' : ''}" data-nav="pegawai">
-            <span class="sidebar-nav-icon">👥</span>
             <span>Pegawai</span>
           </button>
 
           <div class="sidebar-section-title">LAPORAN</div>
           <button class="sidebar-nav-item ${state.currentScreen === 'rekap' ? 'active' : ''}" data-nav="rekap">
-            <span class="sidebar-nav-icon">📊</span>
             <span>Rekap Absensi</span>
           </button>
 
           <button class="sidebar-nav-item ${state.currentScreen === 'approval_pdt' ? 'active' : ''}" data-nav="approval_pdt">
-            <span class="sidebar-nav-icon">✅</span>
             <span>Approve PDT</span>
             <span class="sidebar-nav-badge">1</span>
           </button>
 
           <div class="sidebar-section-title">LAINNYA</div>
           <button class="sidebar-nav-item ${state.currentScreen === 'pdt' ? 'active' : ''}" data-nav="pdt">
-            <span class="sidebar-nav-icon">🚗</span>
             <span>Presensi Luar Tilok (PDT)</span>
           </button>
           <button class="sidebar-nav-item" id="btn-menu-kendala">
-            <span class="sidebar-nav-icon">🛠️</span>
             <span>Kendala Teknis</span>
           </button>
 
           <div class="sidebar-section-title">ADMINISTRASI</div>
           <button class="sidebar-nav-item ${state.currentScreen === 'pengaturan' ? 'active' : ''}" data-nav="pengaturan">
-            <span class="sidebar-nav-icon">⚙️</span>
             <span>Pengaturan Jam Absen</span>
           </button>
         </nav>
 
         <div class="sidebar-footer">
           <button class="sidebar-logout-btn" id="btn-sidebar-logout">
-            <span>🚪</span>
             <span>Sign Out / Keluar</span>
           </button>
         </div>
@@ -533,7 +523,6 @@
             <!-- Email / NIP Input -->
             <div class="rsui-form-group">
               <div class="rsui-input-wrap">
-                <span class="rsui-input-icon">✉️</span>
                 <input type="text" id="login-username" class="rsui-input-field" placeholder="NIP / Nama Pegawai RS" value="Ners. Fitri Rahmadani" required autocomplete="username">
               </div>
             </div>
@@ -541,7 +530,6 @@
             <!-- Password Input -->
             <div class="rsui-form-group">
               <div class="rsui-input-wrap">
-                <span class="rsui-input-icon">🔒</span>
                 <input type="password" id="login-password" class="rsui-input-field" placeholder="Password" value="password123" required autocomplete="current-password">
               </div>
             </div>
@@ -553,10 +541,10 @@
 
             <div style="display: flex; gap: 6px; margin-top: 12px;">
               <button type="button" class="sim-pill" id="quick-login-perawat" style="flex: 1.2; text-align: center; height: 32px; font-weight: 700;">
-                🩺 Pegawai RS (Utama)
+                Pegawai RS (Utama)
               </button>
               <button type="button" class="sim-pill" id="quick-login-admin" style="flex: 1; text-align: center; height: 32px; opacity: 0.85;">
-                🛠️ Akses Admin
+                Akses Admin
               </button>
             </div>
           </form>
@@ -635,7 +623,7 @@
           </div>
 
           <div class="welcome-datetime">
-            <span>📅 ${dateFormatted}</span>
+            <span>${dateFormatted}</span>
             <span class="live-clock-badge" id="top-status-time">${timeFormatted}</span>
           </div>
         </div>
@@ -646,14 +634,11 @@
           <div class="action-card card-presensi-sekarang" id="card-action-presensi">
             <div class="action-card-content">
               <div class="action-card-title">
-                <span>📍</span> Presensi Sekarang
+                Presensi Sekarang
               </div>
               <div class="action-card-desc">
                 Lakukan absensi masuk dan pulang Anda hari ini.
               </div>
-            </div>
-            <div class="action-card-icon-wrap">
-              <span>👉</span>
             </div>
           </div>
 
@@ -661,14 +646,11 @@
           <div class="action-card card-rekap-absensi" id="card-action-rekap">
             <div class="action-card-content">
               <div class="action-card-title">
-                <span>📊</span> Rekap Absensi
+                Rekap Absensi
               </div>
               <div class="action-card-desc">
                 Lihat riwayat absensi Anda.
               </div>
-            </div>
-            <div class="action-card-icon-wrap">
-              <span>📅</span>
             </div>
           </div>
 
@@ -676,14 +658,11 @@
           <div class="action-card card-presensi-pdt" id="card-action-pdt">
             <div class="action-card-content">
               <div class="action-card-title">
-                <span>🚗</span> Presensi Diluar Tilok (PDT)
+                Presensi Diluar Tilok (PDT)
               </div>
               <div class="action-card-desc">
                 Gunakan fitur ini untuk melakukan presensi di luar lokasi tilok.
               </div>
-            </div>
-            <div class="action-card-icon-wrap">
-              <span>📝</span>
             </div>
           </div>
 
@@ -691,14 +670,11 @@
           <div class="action-card card-approve-pdt" id="card-action-approve-pdt">
             <div class="action-card-content">
               <div class="action-card-title">
-                <span>✅</span> Approve PDT
+                Approve PDT
               </div>
               <div class="action-card-desc">
                 Approve presensi diluar tilok (PDT).
               </div>
-            </div>
-            <div class="action-card-icon-wrap">
-              <span>📋</span>
             </div>
           </div>
 
@@ -706,14 +682,11 @@
           <div class="action-card card-presensi-dording" id="card-action-dording">
             <div class="action-card-content">
               <div class="action-card-title">
-                <span>⏱️</span> Presensi Dording
+                Presensi Dording
               </div>
               <div class="action-card-desc">
                 Gunakan fitur ini untuk melakukan presensi dording.
               </div>
-            </div>
-            <div class="action-card-icon-wrap">
-              <span>⚡</span>
             </div>
           </div>
         </div>
@@ -722,7 +695,7 @@
         <div class="jadwal-dinas-section">
           <div class="jadwal-header">
             <div class="jadwal-title">
-              <span>📅</span> Jadwal Dinas
+              Jadwal Dinas
             </div>
             <div style="display: flex; gap: 6px;">
               <span class="jadwal-month-badge" style="background: #10b981; color: #fff;">Tahun 2026</span>
@@ -770,7 +743,7 @@
         <!-- Pink Breadcrumb / Notice Banner matching Photo 1 -->
         <div class="presensi-notice-banner">
           <h4>
-            <span>🏥</span> ${isDording ? 'Presensi Dording (Dinas Shift Berkelanjutan)' : 'Presensi Sekarang (Tilok RSJ Tampan)'}
+            ${isDording ? 'Presensi Dording (Dinas Shift Berkelanjutan)' : 'Presensi Sekarang (Tilok RSJ Tampan)'}
           </h4>
           <div>${isDording ? 'Presensi yang dilakukan ketika ada jadwal dording (Dinas Shift Berkelanjutan)' : 'Presensi yang dilakukan ketika ada jadwal dinas reguler di dalam radius tilok.'}</div>
         </div>
@@ -781,7 +754,7 @@
             <!-- Interactive Geofencing Map -->
             <div class="map-card">
               <div class="map-header">
-                <span>📍 Peta Geofence Tilok</span>
+                <span>Peta Geofence Tilok</span>
                 <span class="geofence-status-pill">
                   <span>●</span> Radius Tilok Aktif (14m)
                 </span>
@@ -791,37 +764,37 @@
 
               <div class="map-toolbar">
                 <span>Gedung Instalasi NAPZA / RSJ Tampan</span>
-                <button class="btn-gps-refresh" id="btn-refresh-gps">🎯 Kalibrasi</button>
+                <button class="btn-gps-refresh" id="btn-refresh-gps">Kalibrasi</button>
               </div>
             </div>
 
             <!-- Big Live Clock Display -->
             <div class="clock-display-card">
               <div class="clock-digits">${timeFormatted}</div>
-              <div class="clock-date">📅 ${dateFormatted}</div>
+              <div class="clock-date">${dateFormatted}</div>
             </div>
 
             <!-- Testing Simulation Preset Toolbar -->
             <div class="simulation-bar-card">
               <div class="simulation-bar-header">
-                <span>⚡ Simulasi Waktu Presensi:</span>
+                <span>Simulasi Waktu Presensi:</span>
                 <span style="color: #0284c7;">Pilih untuk Uji Persentase</span>
               </div>
               <div class="simulation-pills-row">
                 <button class="sim-pill ${state.simPreset === 'live' ? 'active' : ''}" data-preset="live">
-                  ⏰ Waktu Nyata (Live)
+                  Waktu Nyata (Live)
                 </button>
                 <button class="sim-pill ${state.simPreset === 'ontime' ? 'active' : ''}" data-preset="ontime">
-                  🟢 Tepat Waktu (13:05 -> 100%)
+                  Tepat Waktu (13:05 -> 100%)
                 </button>
                 <button class="sim-pill ${state.simPreset === 'late15' ? 'active' : ''}" data-preset="late15">
-                  🟡 Telat 15m (14:15 -> 85%)
+                  Telat 15m (14:15 -> 85%)
                 </button>
                 <button class="sim-pill ${state.simPreset === 'late30' ? 'active' : ''}" data-preset="late30">
-                  🟠 Telat 30m (14:30 -> 70%)
+                  Telat 30m (14:30 -> 70%)
                 </button>
                 <button class="sim-pill ${state.simPreset === 'late60' ? 'active' : ''}" data-preset="late60">
-                  🔴 Telat 60m (15:00 -> 50%)
+                  Telat 60m (15:00 -> 50%)
                 </button>
               </div>
             </div>
@@ -831,7 +804,6 @@
               <!-- Kolom Absen Masuk -->
               <div class="absen-col">
                 <button class="btn-absen-action btn-absen-masuk" id="btn-action-masuk" ${hasMasuk ? 'disabled' : ''}>
-                  <span>📥</span>
                   <span>Absen Masuk</span>
                 </button>
 
@@ -841,7 +813,6 @@
                     ${state.todayStatus.masuk || '--:--'}
                   </div>
                   <div class="absen-percentage-box ${masukScore ? masukScore.badgeClass : ''}">
-                    <span>${masukScore ? masukScore.icon : '⏳'}</span>
                     <span>${masukScore ? `${masukScore.percentage}%` : '0%'}</span>
                   </div>
                   <div class="absen-score-status-sub ${masukScore && masukScore.percentage === 100 ? 'ontime' : 'late'}">
@@ -853,7 +824,6 @@
               <!-- Kolom Absen Pulang -->
               <div class="absen-col">
                 <button class="btn-absen-action btn-absen-pulang" id="btn-action-pulang" ${!hasMasuk || hasPulang ? 'disabled' : ''}>
-                  <span>📤</span>
                   <span>Absen Pulang</span>
                 </button>
 
@@ -863,7 +833,6 @@
                     ${state.todayStatus.pulang || '--:--'}
                   </div>
                   <div class="absen-percentage-box ${pulangScore ? pulangScore.badgeClass : ''}">
-                    <span>${pulangScore ? pulangScore.icon : '⏳'}</span>
                     <span>${pulangScore ? `${pulangScore.percentage}%` : '0%'}</span>
                   </div>
                   <div class="absen-score-status-sub ${pulangScore ? 'ontime' : ''}">
@@ -917,22 +886,22 @@
             <div class="shift-info-row">
               <span class="shift-label">Status Presensi</span>
               <span class="shift-val" style="color: ${hasPulang ? '#059669' : hasMasuk ? '#0284c7' : '#d97706'}; font-family: 'Plus Jakarta Sans', sans-serif;">
-                ${hasPulang ? '✓ Selesai Dinas' : hasMasuk ? '● Sedang Dinas' : '○ Belum Masuk'}
+                ${hasPulang ? 'Selesai Dinas' : hasMasuk ? 'Sedang Dinas' : 'Belum Masuk'}
               </span>
             </div>
 
             <div style="margin-top: 14px; background: #f8fafc; border-radius: 8px; padding: 10px; font-size: 11px; color: #64748b; line-height: 1.4;">
-              <strong>ℹ️ Ketentuan Persentase:</strong><br>
+              <strong>Ketentuan Persentase:</strong><br>
               • Tepat waktu (sebelum ${state.shiftSettings[state.activeShift].masukSelesai}:59) bernilai <strong>100%</strong>.<br>
               • Melewati jam shift akan mengurangi persentase secara proporsional.<br>
-              • <a href="#" id="link-ke-pengaturan" style="color:#0284c7; font-weight:700;">⚙️ Ubah Jam Absen</a>
+              • <a href="#" id="link-ke-pengaturan" style="color:#0284c7; font-weight:700;">Ubah Jam Absen</a>
             </div>
           </div>
 
           <!-- Column 3: SOP / Document Preview Panel matching Photo 1 right panel -->
           <div class="sop-document-card">
             <div class="sop-document-header">
-              <span>📄 SOP & Cetak Data Pasien</span>
+              <span>SOP & Cetak Data Pasien</span>
               <span style="font-size: 10px; color: #0284c7;">1 / 1</span>
             </div>
             <div class="sop-doc-preview-mockup">
@@ -945,8 +914,8 @@
                 3. Nilai kehadiran akan otomatis terintegrasi dengan SIMRS RS Jiwa Tampan Provinsi Riau.
               </p>
               <div style="display: flex; gap: 6px; margin-top: 10px;">
-                <button class="sim-pill" style="flex:1;">🖨️ Cetak</button>
-                <button class="sim-pill" style="flex:1;">⬇️ Unduh PDF</button>
+                <button class="sim-pill" style="flex:1;">Cetak</button>
+                <button class="sim-pill" style="flex:1;">Unduh PDF</button>
               </div>
             </div>
           </div>
@@ -987,7 +956,7 @@
       // Hospital Center Pin Marker matching Photo 1
       const hospitalIcon = L.divIcon({
         className: 'custom-pin-icon',
-        html: `<div style="background:#0284c7;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(2,132,199,0.7);border:2px solid #fff;font-size:14px;">🏥</div>`,
+        html: `<div style="background:#0284c7;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(2,132,199,0.7);border:2px solid #fff;font-size:12px;font-weight:bold;">RS</div>`,
         iconSize: [30, 30],
         iconAnchor: [15, 15],
       });
@@ -1001,7 +970,7 @@
       const userLoc = [RSJ_COORDS[0] + 0.0001, RSJ_COORDS[1] + 0.00007];
       const userIcon = L.divIcon({
         className: 'user-pin-icon',
-        html: `<div style="background:#10b981;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(16,185,129,0.8);border:2px solid #fff;font-size:11px;">📍</div>`,
+        html: `<div style="background:#10b981;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(16,185,129,0.8);border:2px solid #fff;font-size:10px;font-weight:bold;">OK</div>`,
         iconSize: [24, 24],
         iconAnchor: [12, 12],
       });
@@ -1065,7 +1034,7 @@
     return `
       <div class="pdt-screen">
         <div class="form-card">
-          <div class="form-card-title">🚗 Formulir Pengajuan Presensi Luar Tilok (PDT)</div>
+          <div class="form-card-title">Formulir Pengajuan Presensi Luar Tilok (PDT)</div>
           
           <form id="pdt-form">
             <div class="form-group">
@@ -1090,7 +1059,6 @@
 
             <button type="submit" class="btn-login-submit" style="background: var(--slate-gradient); margin-top: 10px;">
               <span>Kirim Pengajuan PDT</span>
-              <span>📤</span>
             </button>
           </form>
         </div>
@@ -1105,7 +1073,7 @@
     return `
       <div class="pdt-screen">
         <div class="form-card">
-          <div class="form-card-title">✅ Daftar Verifikasi & Approval PDT</div>
+          <div class="form-card-title">Daftar Verifikasi & Approval PDT</div>
           <p style="font-size: 12px; color: #64748b; margin-bottom: 14px;">Daftar pengajuan presensi di luar lokasi tilok yang membutuhkan persetujuan atasan.</p>
 
           ${state.pdtSubmissions.map((pdt) => `
@@ -1116,7 +1084,7 @@
                   ${pdt.status}
                 </span>
               </div>
-              <div style="font-size: 11.5px; color: #475569;">📅 ${pdt.tanggal} • 📍 ${pdt.lokasi}</div>
+              <div style="font-size: 11.5px; color: #475569;">${pdt.tanggal} • ${pdt.lokasi}</div>
               <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Alasan: "${pdt.alasan}"</div>
 
               ${pdt.status === 'Pending' ? `
@@ -1195,7 +1163,7 @@
         <div class="pengaturan-card-body">
           <!-- Jam Masuk -->
           <div class="pengaturan-time-group">
-            <div class="pengaturan-time-label">🟢 Jam Absen Masuk (Tepat Waktu)</div>
+            <div class="pengaturan-time-label">Jam Absen Masuk (Tepat Waktu)</div>
             <div class="pengaturan-time-row">
               <div class="pengaturan-time-field">
                 <label>Mulai Dari</label>
@@ -1212,7 +1180,7 @@
 
           <!-- Jam Pulang -->
           <div class="pengaturan-time-group">
-            <div class="pengaturan-time-label">🔴 Jam Absen Pulang (Shift Penuh)</div>
+            <div class="pengaturan-time-label">Jam Absen Pulang (Shift Penuh)</div>
             <div class="pengaturan-time-row">
               <div class="pengaturan-time-field">
                 <label>Mulai Bisa Pulang</label>
@@ -1229,8 +1197,8 @@
 
           <!-- Ringkasan Shift -->
           <div class="pengaturan-summary-row">
-            <span>📥 Masuk: <strong>${sh.masukMulai}</strong> s/d <strong>${sh.masukSelesai}</strong></span>
-            <span>📤 Pulang: <strong>${sh.pulangMulai}</strong> s/d <strong>${sh.pulangSelesai}</strong></span>
+            <span>Masuk: <strong>${sh.masukMulai}</strong> s/d <strong>${sh.masukSelesai}</strong></span>
+            <span>Pulang: <strong>${sh.pulangMulai}</strong> s/d <strong>${sh.pulangSelesai}</strong></span>
           </div>
         </div>
       </div>
@@ -1241,14 +1209,13 @@
         <!-- Header Pengaturan -->
         <div style="background: linear-gradient(135deg, #1e3a5f 0%, #0284c7 100%); border-radius: 16px; padding: 18px; margin-bottom: 16px; color: #fff;">
           <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-            <span style="font-size:24px;">⚙️</span>
             <div>
               <div style="font-size:15px; font-weight:800;">Pengaturan Jam Absen</div>
               <div style="font-size:11px; opacity:0.85;">Atur jam masuk &amp; pulang untuk semua jenis shift di RSJ Tampan</div>
             </div>
           </div>
           <div style="background:rgba(255,255,255,0.15); border-radius:8px; padding:8px 12px; font-size:11px; margin-top:10px;">
-            ⚡ Shift Aktif Saat Ini: <strong>${shifts[activeShift].icon} ${shifts[activeShift].nama}</strong>
+            Shift Aktif Saat Ini: <strong>${shifts[activeShift].nama}</strong>
             &nbsp;|&nbsp; Masuk s/d <strong>${shifts[activeShift].masukSelesai}</strong>
             &nbsp;|&nbsp; Pulang mulai <strong>${shifts[activeShift].pulangMulai}</strong>
           </div>
@@ -1256,12 +1223,12 @@
 
         <!-- Pilih Shift Aktif -->
         <div style="background:#fff; border-radius:14px; padding:14px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-          <div style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">🎯 Shift Aktif Untuk Absen Hari Ini</div>
+          <div style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">Shift Aktif Untuk Absen Hari Ini</div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             ${Object.entries(shifts).map(([key, sh]) => `
               <button class="sim-pill shift-selector-btn ${activeShift === key ? 'active' : ''}" data-shift="${key}"
                 style="border-left: 3px solid ${sh.warna}; font-size:12px; padding:6px 14px;">
-                ${sh.icon} ${sh.nama}
+                ${sh.nama}
               </button>
             `).join('')}
           </div>
@@ -1277,12 +1244,12 @@
 
         <!-- Tombol Simpan -->
         <button class="btn-login-submit" id="btn-simpan-pengaturan" style="margin-top:18px; background: linear-gradient(135deg, #059669, #10b981);">
-          <span>💾 Simpan Semua Pengaturan</span>
+          <span>Simpan Semua Pengaturan</span>
         </button>
 
         <!-- Tombol Reset -->
         <button class="btn-cancel-modal" id="btn-reset-pengaturan" style="width:100%; margin-top:10px; height:40px; font-size:13px;">
-          🔄 Reset ke Default
+          Reset ke Default
         </button>
       </div>
     `;
@@ -1305,7 +1272,7 @@
               <div class="fr-pulse-dot"></div>
               <span>Face Recognition Biometrik (AI)</span>
             </div>
-            <button class="sidebar-close-btn" id="btn-close-camera" style="color: #cbd5e1; background: rgba(255,255,255,0.1);">✕</button>
+            <button class="sidebar-close-btn" id="btn-close-camera" style="color: #cbd5e1; background: rgba(255,255,255,0.1);">X</button>
           </div>
 
           <!-- Video / Biometric Scanner Viewport -->
@@ -1315,14 +1282,14 @@
             <!-- Fallback High-tech Simulated Face Graphic if camera blocked -->
             <div class="simulated-face-wrap" id="simulated-face-fallback" style="display: none;">
               <div class="simulated-avatar-graphic">
-                <span>👤</span>
+                <span>AI</span>
               </div>
               <div style="margin-top:10px; font-size:11px; color:#cbd5e1; text-align:center; z-index:5;">
                 <span style="display:block; font-weight:700; color:#f59e0b; margin-bottom:4px;">Kamera Belum Terhubung</span>
                 <span>Klik tombol di bawah setelah mengizinkan akses kamera:</span>
                 <div style="margin-top:6px;">
                   <button id="btn-retry-camera" style="background:#0284c7; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:11px; font-weight:700; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.3);">
-                    🔄 Hubungkan Kamera Ulang
+                    Hubungkan Kamera Ulang
                   </button>
                 </div>
               </div>
@@ -1361,7 +1328,7 @@
             <!-- Status Pill at Top -->
             <div class="fr-status-pill-top">
               <div class="fr-tag-geofence">
-                <span>📍</span> RSJ Tampan (Radius 14m)
+                RSJ Tampan (Radius 14m)
               </div>
               <div class="fr-tag-live">AI LIVE 30 FPS</div>
             </div>
@@ -1370,16 +1337,16 @@
             <div class="fr-result-hud">
               <div class="fr-result-row">
                 <div class="fr-user-matched">
-                  <span>👤</span> ${state.user ? state.user.name : 'Ners. Fitri Rahmadani'}
+                  ${state.user ? state.user.name : 'Ners. Fitri Rahmadani'}
                 </div>
                 <div class="fr-match-rate">Kecocokan: 98.7%</div>
               </div>
               <div class="fr-result-row" style="color: #94a3b8; font-size: 10px;">
                 <span>NIP: 19890412 201403 2 004</span>
-                <span style="color: #10b981;">Liveness: Valid ✓</span>
+                <span style="color: #10b981;">Liveness: Valid</span>
               </div>
               <div class="fr-location-geo" style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px; margin-top: 2px;">
-                <span>⏰ Jam: ${effectiveTime} (${action})</span>
+                <span>Jam: ${effectiveTime} (${action})</span>
                 <span style="font-weight: 800; color: ${score.percentage === 100 ? '#10b981' : '#f59e0b'};">
                   Skor: ${score.percentage}% (${score.statusText})
                 </span>
@@ -1391,7 +1358,6 @@
           <div class="camera-modal-footer">
             <button class="btn-cancel-modal" id="btn-cancel-camera">Batal</button>
             <button class="btn-snap-capture" id="btn-snap-capture">
-              <span>📸</span>
               <span>Ambil Foto & Verifikasi</span>
             </button>
           </div>
@@ -1672,8 +1638,8 @@
             if (summary) {
               const sh = state.shiftSettings[shiftKey];
               summary.innerHTML = `
-                <span>📥 Masuk: <strong>${sh.masukMulai}</strong> s/d <strong>${sh.masukSelesai}</strong></span>
-                <span>📤 Pulang: <strong>${sh.pulangMulai}</strong> s/d <strong>${sh.pulangSelesai}</strong></span>
+                <span>Masuk: <strong>${sh.masukMulai}</strong> s/d <strong>${sh.masukSelesai}</strong></span>
+                <span>Pulang: <strong>${sh.pulangMulai}</strong> s/d <strong>${sh.pulangSelesai}</strong></span>
               `;
             }
           }
@@ -1694,7 +1660,7 @@
           }
         });
         const sh = state.shiftSettings[state.activeShift];
-        showToast(`✅ Pengaturan tersimpan! Shift aktif: ${sh.icon} ${sh.nama} | Masuk s/d ${sh.masukSelesai} | Pulang mulai ${sh.pulangMulai}`);
+        showToast(`Pengaturan tersimpan! Shift aktif: ${sh.nama} | Masuk s/d ${sh.masukSelesai} | Pulang mulai ${sh.pulangMulai}`);
         setTimeout(() => navigateTo('presensi', { mode: state.activeShift === 'dording' ? 'dording' : 'sekarang' }), 1200);
       });
     }
@@ -1704,13 +1670,13 @@
     if (btnReset) {
       btnReset.addEventListener('click', () => {
         state.shiftSettings = {
-          pagi:    { nama:'Shift Pagi',    icon:'🌅', masukMulai:'06:00', masukSelesai:'07:00', pulangMulai:'14:00', pulangSelesai:'15:00', warna:'#10b981' },
-          sore:    { nama:'Shift Sore',    icon:'🌇', masukMulai:'13:00', masukSelesai:'14:00', pulangMulai:'20:00', pulangSelesai:'22:00', warna:'#0284c7' },
-          malam:   { nama:'Shift Malam',   icon:'🌙', masukMulai:'20:00', masukSelesai:'21:00', pulangMulai:'07:00', pulangSelesai:'08:00', warna:'#7c3aed' },
-          dording: { nama:'Shift Dording', icon:'⏱️', masukMulai:'13:00', masukSelesai:'14:00', pulangMulai:'07:00', pulangSelesai:'08:00', warna:'#d97706' },
+          pagi:    { nama:'Shift Pagi',    icon:'', masukMulai:'06:00', masukSelesai:'07:00', pulangMulai:'14:00', pulangSelesai:'15:00', warna:'#10b981' },
+          sore:    { nama:'Shift Sore',    icon:'', masukMulai:'13:00', masukSelesai:'14:00', pulangMulai:'20:00', pulangSelesai:'22:00', warna:'#0284c7' },
+          malam:   { nama:'Shift Malam',   icon:'', masukMulai:'20:00', masukSelesai:'21:00', pulangMulai:'07:00', pulangSelesai:'08:00', warna:'#7c3aed' },
+          dording: { nama:'Shift Dording', icon:'', masukMulai:'13:00', masukSelesai:'14:00', pulangMulai:'07:00', pulangSelesai:'08:00', warna:'#d97706' },
         };
         state.activeShift = 'sore';
-        showToast('🔄 Pengaturan direset ke nilai default.');
+        showToast('Pengaturan direset ke nilai default.');
         renderApp();
       });
     }

@@ -227,7 +227,7 @@ export function ReportsScreen({ user, attendance = {}, onBack, currentTime, isDa
 
   const handleExport = () => {
     Alert.alert(
-      'Ekspor Rekapitulasi Berhasil! 📄',
+      'Ekspor Rekapitulasi Berhasil!',
       `Laporan Rekap Absensi Pegawai (${user?.name || 'Pegawai'}) Periode September 2026 berhasil dibuat dan siap diunduh dalam format PDF/Excel.`
     );
   };
@@ -239,7 +239,7 @@ export function ReportsScreen({ user, attendance = {}, onBack, currentTime, isDa
         <View style={styles.banner}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.bannerTitle}>📊 Rekapitulasi Absensi Pegawai</Text>
+              <Text style={styles.bannerTitle}>Rekapitulasi Absensi Pegawai</Text>
               <Text style={styles.bannerSub}>
                 Periode {livePeriod || 'September 2026'} • {user?.name || 'Ners. Fitri Rahmadani, S.Kep'}
               </Text>
@@ -249,7 +249,7 @@ export function ReportsScreen({ user, attendance = {}, onBack, currentTime, isDa
               style={reportStyles.exportBtn}
               activeOpacity={0.75}
             >
-              <Text style={reportStyles.exportBtnText}>📄 Unduh PDF</Text>
+              <Text style={reportStyles.exportBtnText}>Unduh PDF</Text>
             </TouchableOpacity>
           </View>
 
@@ -267,7 +267,7 @@ export function ReportsScreen({ user, attendance = {}, onBack, currentTime, isDa
           {/* Live Duration Strip (only shown if clocked in & not clocked out) */}
           {liveDuration ? (
             <View style={reportStyles.durationStrip}>
-              <Text style={reportStyles.durationLabel}>⏱ Durasi Kerja Hari Ini</Text>
+              <Text style={reportStyles.durationLabel}>Durasi Kerja Hari Ini</Text>
               <Text style={reportStyles.durationValue}>{liveDuration}</Text>
             </View>
           ) : null}
@@ -335,7 +335,7 @@ export function ReportsScreen({ user, attendance = {}, onBack, currentTime, isDa
         {/* Log History */}
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <Text style={styles.sectionTitle}>📜 Riwayat Absensi Terverifikasi</Text>
+            <Text style={styles.sectionTitle}>Riwayat Absensi Terverifikasi</Text>
             <Text style={{ fontSize: 11, color: '#64748b' }}>Ketuk baris untuk bukti foto</Text>
           </View>
 
@@ -374,11 +374,11 @@ export function ReportsScreen({ user, attendance = {}, onBack, currentTime, isDa
               {/* Card Footer with GPS & Photo Proof Trigger */}
               <View style={reportStyles.cardFooter}>
                 <Text style={{ fontSize: 10.5, color: '#64748b' }}>
-                  📍 {log.location}
+                  {log.location}
                 </Text>
                 <View style={reportStyles.proofPill}>
                   <Text style={reportStyles.proofPillText}>
-                    {log.photo ? '📷 Bukti Wajah Valid ➔' : '🔍 Detail Log ➔'}
+                    {log.photo ? 'Bukti Wajah Valid' : 'Detail Log'}
                   </Text>
                 </View>
               </View>
@@ -392,7 +392,7 @@ export function ReportsScreen({ user, attendance = {}, onBack, currentTime, isDa
             <View style={reportStyles.proofModalCard}>
               <View style={reportStyles.modalHeader}>
                 <View>
-                  <Text style={reportStyles.modalTitle}>📷 Bukti Verifikasi Presensi Biometrik</Text>
+                  <Text style={reportStyles.modalTitle}>Bukti Verifikasi Presensi Biometrik</Text>
                   <Text style={reportStyles.modalSub}>
                     {selectedProofLog?.date} • {selectedProofLog?.shift}
                   </Text>
@@ -401,7 +401,7 @@ export function ReportsScreen({ user, attendance = {}, onBack, currentTime, isDa
                   onPress={() => setSelectedProofLog(null)}
                   style={reportStyles.closeBtn}
                 >
-                  <Text style={{ color: '#64748b', fontSize: 16, fontWeight: 'bold' }}>✕</Text>
+                  <Text style={{ color: '#64748b', fontSize: 16, fontWeight: 'bold' }}>X</Text>
                 </TouchableOpacity>
               </View>
 
@@ -415,13 +415,12 @@ export function ReportsScreen({ user, attendance = {}, onBack, currentTime, isDa
                     />
                     <View style={reportStyles.watermarkOverlay}>
                       <Text style={reportStyles.watermarkText}>
-                        ✓ TERVERIFIKASI BIOMETRIK RSJ TAMPAN
+                        TERVERIFIKASI BIOMETRIK RSJ TAMPAN
                       </Text>
                     </View>
                   </View>
                 ) : (
                   <View style={reportStyles.simulatedPhotoWrap}>
-                    <Text style={{ fontSize: 32 }}>🛡️</Text>
                     <Text style={{ fontSize: 12.5, fontWeight: '800', color: '#0f172a', marginTop: 6 }}>
                       Biometrik Face Recognition Tervalidasi
                     </Text>
@@ -430,7 +429,7 @@ export function ReportsScreen({ user, attendance = {}, onBack, currentTime, isDa
                     </Text>
                     <View style={{ backgroundColor: '#ecfdf5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, marginTop: 8 }}>
                       <Text style={{ fontSize: 10.5, fontWeight: '800', color: '#059669' }}>
-                        Match Biometrik: {selectedProofLog?.match} ✓ Valid
+                        Match Biometrik: {selectedProofLog?.match} (Valid)
                       </Text>
                     </View>
                   </View>
@@ -492,7 +491,7 @@ export function ReportsScreen({ user, attendance = {}, onBack, currentTime, isDa
                   }}
                 >
                   <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 12.5 }}>
-                    🖨️ Cetak Slip Bukti
+                    Cetak Slip Bukti
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -867,7 +866,7 @@ export function PdtScreen({ onBack, onDone }) {
     <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
       <View style={styles.page}>
         <View style={styles.banner}>
-          <Text style={styles.bannerTitle}>🚗 Formulir Presensi Luar Tilok (PDT)</Text>
+          <Text style={styles.bannerTitle}>Formulir Presensi Luar Tilok (PDT)</Text>
           <Text style={styles.bannerSub}>Pengajuan kehadiran saat dinas luar, rujukan atau tugas eksternal.</Text>
         </View>
 
@@ -894,18 +893,18 @@ export function PdtScreen({ onBack, onDone }) {
           </View>
 
           <View style={{ backgroundColor: '#f8fafc', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0', marginVertical: 8 }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: '#475569' }}>📎 Lampiran Surat Tugas / Foto Lokasi:</Text>
-            <Text style={{ fontSize: 11, color: '#0284c7', fontWeight: '800', marginTop: 4 }}>✓ ST-RSJT-IX-2026-088.pdf (Terlampir)</Text>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: '#475569' }}>Lampiran Surat Tugas / Foto Lokasi:</Text>
+            <Text style={{ fontSize: 11, color: '#0284c7', fontWeight: '800', marginTop: 4 }}>ST-RSJT-IX-2026-088.pdf (Terlampir)</Text>
           </View>
 
           <TouchableOpacity style={styles.primaryButton} onPress={handleKirim}>
-            <Text style={styles.actionText}>Kirim Pengajuan PDT ➔</Text>
+            <Text style={styles.actionText}>Kirim Pengajuan PDT</Text>
           </TouchableOpacity>
         </View>
 
         {/* History Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📋 Riwayat Pengajuan PDT</Text>
+          <Text style={styles.sectionTitle}>Riwayat Pengajuan PDT</Text>
           {history.map((item, idx) => (
             <View
               key={idx}

@@ -72,7 +72,7 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
             onPress={onClose}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={{ color: activeTheme.drawerText, fontSize: 14, fontWeight: '800' }}>✕</Text>
+            <Text style={{ color: activeTheme.drawerText, fontSize: 14, fontWeight: '800' }}>X</Text>
           </TouchableOpacity>
         </View>
 
@@ -100,7 +100,6 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
         {/* Navigation Items */}
         <View style={{ flex: 1 }}>
           <NavItem
-            icon="📊"
             label="Beranda"
             active={activeScreen === 'dashboard'}
             theme={activeTheme}
@@ -110,7 +109,6 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
             }}
           />
           <NavItem
-            icon="📍"
             label="Presensi Sekarang"
             active={activeScreen === 'presensi_sekarang'}
             theme={activeTheme}
@@ -120,7 +118,6 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
             }}
           />
           <NavItem
-            icon="⏱️"
             label="Presensi Dording"
             active={activeScreen === 'presensi_dording'}
             theme={activeTheme}
@@ -130,7 +127,6 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
             }}
           />
           <NavItem
-            icon="📈"
             label="Rekap Absensi"
             active={activeScreen === 'rekap'}
             theme={activeTheme}
@@ -140,7 +136,6 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
             }}
           />
           <NavItem
-            icon="🚗"
             label="Presensi Luar Tilok (PDT)"
             active={activeScreen === 'pdt'}
             theme={activeTheme}
@@ -159,14 +154,14 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
             onClose();
           }}
         >
-          <Text style={styles.logoutText}>🚪 Keluar dari Akun</Text>
+          <Text style={styles.logoutText}>Keluar dari Akun</Text>
         </TouchableOpacity>
       </Animated.View>
     </>
   );
 }
 
-function NavItem({ icon, label, active, theme, onPress }) {
+function NavItem({ label, active, theme, onPress }) {
   return (
     <TouchableOpacity
       style={[
@@ -187,7 +182,7 @@ function NavItem({ icon, label, active, theme, onPress }) {
           },
         ]}
       >
-        {icon} {label}
+        {label}
       </Text>
     </TouchableOpacity>
   );
