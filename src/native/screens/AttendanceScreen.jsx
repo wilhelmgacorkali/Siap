@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, Modal, Platform, ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Alert, Image, Modal, Platform, ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import * as Location from 'expo-location';
 import { styles } from '../theme';
 import TilokMap from '../components/TilokMap';
@@ -27,7 +27,8 @@ export default function AttendanceScreen({
   const activeDarkMode = theme?.isDark ?? isDarkMode;
   const [activeType, setActiveType] = useState(attendanceType || 'masuk');
   const [dordingPattern, setDordingPattern] = useState('pagi_siang'); // 'pagi_siang' | 'siang_malam' | 'malam_pagi'
-  const [userDistance, setUserDistance] = useState(null); // meter dari titik tilok resmi (dihitung asli)
+  const [userDistance, setUserDistance] = useState(null); // meter dari tix tilok resmi (dihitung asli)
+  const [userCoords, setUserCoords] = useState(null); // { latitude, longitude } koordinat GPS asli
   const [isLocating, setIsLocating] = useState(true);
   const [geofenceAlertVisible, setGeofenceAlertVisible] = useState(false);
   const [pendingType, setPendingType] = useState('masuk');
@@ -51,26 +52,53 @@ export default function AttendanceScreen({
   const fetchRealLocation = async () => {
     setIsLocating(true);
     try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Izin Ditolak', 'Akses lokasi diperlukan untuk verifikasi Tilok.');
-        setIsLocating(false);
+      // 1. Coba HTML5 Geolocation asli browser (sangat akurat di web / mobile browser)
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            const distance = getDistanceFromLatLonInMeters(lat, lng, TILOK_LAT, TILOK_LONG);
+            setUserCoords({ latitude: lat, longitude: lng });
+            setUserDistance(Math.round(distance));
+            setIsLocating(false);
+          },
+          async (err) => {
+            console.warn('Navigator geolocation gagal, gunakan fallback Expo:', err);
+            await fallbackExpoLocation();
+          },
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
+        );
         return;
       }
-
-      let location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      const distance = getDistanceFromLatLonInMeters(
-        location.coords.latitude, 
-        location.coords.longitude, 
-        TILOK_LAT, 
-        TILOK_LONG
-      );
-      setUserDistance(distance);
+      await fallbackExpoLocation();
     } catch (error) {
-      Alert.alert('Gagal', 'Tidak dapat mengambil data lokasi perangkat Anda.');
+      console.warn('Geolocation catch:', error);
+      setIsLocating(false);
+    }
+  };
+
+  const fallbackExpoLocation = async () => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        let location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        const lat = location.coords.latitude;
+        const lng = location.coords.longitude;
+        const distance = getDistanceFromLatLonInMeters(lat, lng, TILOK_LAT, TILOK_LONG);
+        setUserCoords({ latitude: lat, longitude: lng });
+        setUserDistance(Math.round(distance));
+      } else {
+        // Jika pengguna menolak izin GPS, default di luar radius tilok untuk verifikasi aman
+        setUserCoords({ latitude: TILOK_LAT + 0.0075, longitude: TILOK_LONG + 0.0065 });
+        setUserDistance(1150);
+      }
+    } catch (err) {
+      console.warn('Fallback Expo location error:', err);
+      setUserCoords({ latitude: TILOK_LAT + 0.0075, longitude: TILOK_LONG + 0.0065 });
+      setUserDistance(1150);
     } finally {
       setIsLocating(false);
     }
@@ -430,108 +458,161 @@ export default function AttendanceScreen({
 
         {/* Peta Interaktif Tilok & Radius Geofencing Resmi (Foto 2: Lat 0.465791, Long 101.381957, Radius 200m) */}
         <TilokMap
-          latitude={0.465791}
-          longitude={101.381957}
+          latitude={TILOK_LAT}
+          longitude={TILOK_LONG}
           radius={200}
           userDistance={userDistance}
           isOutsideRadius={userDistance > 200}
+          customUserPos={userCoords ? [userCoords.latitude, userCoords.longitude] : null}
           locationName="RS Jiwa Tampan - Pekanbaru"
         />
 
-        {/* Tombol Segarkan GPS */}
+        {/* Kontrol Status GPS & Mode Tilok */}
         <View
           style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
             backgroundColor: theme?.cardSolid || '#ffffff',
-            borderRadius: 12,
-            padding: 10,
+            borderRadius: 14,
+            padding: 12,
             marginBottom: 12,
             borderWidth: 1,
             borderColor: theme?.border || '#e2e8f0',
+            gap: 10,
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            {isLocating ? (
-              <ActivityIndicator size="small" color="#059669" />
-            ) : (
-              <View
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 5,
-                  backgroundColor: userDistance !== null && userDistance <= 200 ? '#059669' : '#ea580c',
-                }}
-              />
-            )}
-            <Text style={{ fontSize: 11, fontWeight: '700', color: theme?.textSub || '#475569' }}>
-              {isLocating
-                ? 'Mencari sinyal GPS...'
-                : userDistance !== null
-                ? `Jarak: ${Math.round(userDistance)}m dari Tilok Resmi`
-                : 'Lokasi tidak diketahui'}
-            </Text>
-          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+              {isLocating ? (
+                <ActivityIndicator size="small" color="#059669" />
+              ) : (
+                <View
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: userDistance !== null && userDistance <= 200 ? '#059669' : '#ea580c',
+                  }}
+                />
+              )}
+              <Text style={{ fontSize: 11.5, fontWeight: '800', color: theme?.textMain || '#0f172a' }}>
+                {isLocating
+                  ? 'Mendeteksi sinyal GPS...'
+                  : userDistance !== null
+                  ? userDistance <= 200
+                    ? `Dalam Radius Tilok (${Math.round(userDistance)}m - Sah)`
+                    : `Di Luar Radius (${userDistance >= 1000 ? (userDistance/1000).toFixed(1) + ' km' : Math.round(userDistance) + 'm'})`
+                  : 'Lokasi belum terdeteksi'}
+              </Text>
+            </View>
 
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            {(attendance?.masuk || attendance?.pulang) && onResetAttendance && (
+            <View style={{ flexDirection: 'row', gap: 6 }}>
               <TouchableOpacity
+                onPress={fetchRealLocation}
                 style={{
-                  paddingHorizontal: 10,
-                  paddingVertical: 6,
-                  borderRadius: 8,
-                  backgroundColor: activeDarkMode ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2',
-                  borderWidth: 1,
-                  borderColor: '#ef4444',
-                }}
-                onPress={() => {
-                  if (Platform.OS === 'web') {
-                    if (window.confirm('Reset status presensi hari ini agar tombol absensi dapat dicoba kembali?')) {
-                      onResetAttendance();
-                    }
-                  } else {
-                    Alert.alert(
-                      'Reset Presensi',
-                      'Apakah Anda ingin mereset status presensi hari ini agar tombol Masuk & Pulang bisa digunakan kembali?',
-                      [
-                        { text: 'Batal', style: 'cancel' },
-                        { text: 'Reset', style: 'destructive', onPress: onResetAttendance },
-                      ]
-                    );
-                  }
+                  backgroundColor: '#f1f5f9',
+                  paddingHorizontal: 8,
+                  paddingVertical: 5,
+                  borderRadius: 6,
                 }}
               >
-                <Text
-                  style={{
-                    fontSize: 10,
-                    fontWeight: '800',
-                    color: '#dc2626',
-                  }}
-                >
-                  Reset Hari Ini
+                <Text style={{ fontSize: 10, fontWeight: '700', color: '#0284c7' }}>
+                  🔄 Cek GPS
                 </Text>
               </TouchableOpacity>
-            )}
+
+              {(attendance?.masuk || attendance?.pulang) && onResetAttendance && (
+                <TouchableOpacity
+                  style={{
+                    paddingHorizontal: 8,
+                    paddingVertical: 5,
+                    borderRadius: 6,
+                    backgroundColor: activeDarkMode ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2',
+                    borderWidth: 1,
+                    borderColor: '#ef4444',
+                  }}
+                  onPress={() => {
+                    if (Platform.OS === 'web') {
+                      if (window.confirm('Reset status presensi hari ini agar tombol absensi dapat dicoba kembali?')) {
+                        onResetAttendance();
+                      }
+                    } else {
+                      Alert.alert(
+                        'Reset Presensi',
+                        'Apakah Anda ingin mereset status presensi hari ini agar tombol Masuk & Pulang bisa digunakan kembali?',
+                        [
+                          { text: 'Batal', style: 'cancel' },
+                          { text: 'Reset', style: 'destructive', onPress: onResetAttendance },
+                        ]
+                      );
+                    }
+                  }}
+                >
+                  <Text style={{ color: '#ef4444', fontSize: 10, fontWeight: '800' }}>
+                    Reset
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          {/* Quick Simulation Buttons */}
+          <View style={{ flexDirection: 'row', gap: 6, paddingTop: 4, borderTopWidth: 1, borderTopColor: theme?.borderSubtle || '#f1f5f9' }}>
+            <TouchableOpacity
+              onPress={fetchRealLocation}
+              style={{
+                flex: 1,
+                paddingVertical: 6,
+                paddingHorizontal: 4,
+                borderRadius: 8,
+                backgroundColor: '#f8fafc',
+                borderWidth: 1,
+                borderColor: '#cbd5e1',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 9.5, fontWeight: '700', color: '#334155' }}>
+                📍 GPS Asli
+              </Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 8,
-                backgroundColor: theme?.pillBg || '#f1f5f9',
+              onPress={() => {
+                setUserCoords({ latitude: TILOK_LAT + 0.0001, longitude: TILOK_LONG - 0.00008 });
+                setUserDistance(14);
               }}
-              onPress={fetchRealLocation}
-              disabled={isLocating}
+              style={{
+                flex: 1,
+                paddingVertical: 6,
+                paddingHorizontal: 4,
+                borderRadius: 8,
+                backgroundColor: userDistance !== null && userDistance <= 200 ? '#ecfdf5' : '#f8fafc',
+                borderWidth: 1,
+                borderColor: userDistance !== null && userDistance <= 200 ? '#10b981' : '#cbd5e1',
+                alignItems: 'center',
+              }}
             >
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontWeight: '800',
-                  color: theme?.textMain || '#0f172a',
-                }}
-              >
-                GPS
+              <Text style={{ fontSize: 9.5, fontWeight: '800', color: userDistance !== null && userDistance <= 200 ? '#059669' : '#334155' }}>
+                🏢 Di Dalam (14m)
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setUserCoords({ latitude: TILOK_LAT + 0.0085, longitude: TILOK_LONG + 0.0075 });
+                setUserDistance(1250);
+              }}
+              style={{
+                flex: 1,
+                paddingVertical: 6,
+                paddingHorizontal: 4,
+                borderRadius: 8,
+                backgroundColor: userDistance !== null && userDistance > 200 ? '#fff7ed' : '#f8fafc',
+                borderWidth: 1,
+                borderColor: userDistance !== null && userDistance > 200 ? '#f97316' : '#cbd5e1',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 9.5, fontWeight: '800', color: userDistance !== null && userDistance > 200 ? '#c2410c' : '#334155' }}>
+                🚗 Di Luar (1.2 km)
               </Text>
             </TouchableOpacity>
           </View>
@@ -685,17 +766,35 @@ export default function AttendanceScreen({
               {attendance?.masuk && (
                 <View
                   style={{
-                    flexDirection: 'row',
                     alignItems: 'center',
-                    gap: 4,
                     marginTop: 6,
                     paddingTop: 6,
                     borderTopWidth: 1,
                     borderTopColor: theme?.borderSubtle || '#f1f5f9',
+                    width: '100%',
                   }}
                 >
+                  {attendance?.masukPhoto && (
+                    <View
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: 8,
+                        overflow: 'hidden',
+                        borderWidth: 1.5,
+                        borderColor: '#10b981',
+                        marginBottom: 4,
+                        backgroundColor: '#0f172a',
+                      }}
+                    >
+                      <Image
+                        source={{ uri: attendance.masukPhoto }}
+                        style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+                      />
+                    </View>
+                  )}
                   <Text style={{ fontSize: 9.5, color: '#16a34a', fontWeight: '800' }}>
-                    Face Recognition: 99.4% (Valid)
+                    ✓ Face Recognition: 99.4% (Valid)
                   </Text>
                 </View>
               )}
@@ -810,17 +909,35 @@ export default function AttendanceScreen({
               {attendance?.pulang && (
                 <View
                   style={{
-                    flexDirection: 'row',
                     alignItems: 'center',
-                    gap: 4,
                     marginTop: 6,
                     paddingTop: 6,
                     borderTopWidth: 1,
                     borderTopColor: theme?.borderSubtle || '#f1f5f9',
+                    width: '100%',
                   }}
                 >
+                  {attendance?.pulangPhoto && (
+                    <View
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: 8,
+                        overflow: 'hidden',
+                        borderWidth: 1.5,
+                        borderColor: '#0284c7',
+                        marginBottom: 4,
+                        backgroundColor: '#0f172a',
+                      }}
+                    >
+                      <Image
+                        source={{ uri: attendance.pulangPhoto }}
+                        style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+                      />
+                    </View>
+                  )}
                   <Text style={{ fontSize: 9.5, color: '#16a34a', fontWeight: '800' }}>
-                    Face Recognition: 99.4% (Valid)
+                    ✓ Face Recognition: 99.4% (Valid)
                   </Text>
                 </View>
               )}

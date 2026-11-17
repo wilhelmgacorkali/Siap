@@ -84,38 +84,25 @@
       { id: 'PDT-001', nama: 'Ners. Siti Aminah', tanggal: '05 Sep 2026', lokasi: 'Dinas Kesehatan Prov. Riau', alasan: 'Pelatihan Pelayanan Jiwa Terpadu', status: 'Pending' },
       { id: 'PDT-002', nama: 'dr. Ahmad Fauzi, Sp.KJ', tanggal: '02 Sep 2026', lokasi: 'Kemenkes RI Jakarta', alasan: 'Rapat Koordinasi RS Jiwa', status: 'Disetujui' },
     ],
-    shiftSchedule: [
-      { day: 1, code: 'P', name: 'Pagi' },
-      { day: 2, code: 'S', name: 'Sore' },
-      { day: 3, code: 'D', name: 'Dording' },
-      { day: 4, code: 'M', name: 'Malam' },
-      { day: 5, code: 'L', name: 'Libur' },
-      { day: 6, code: 'P', name: 'Pagi' },
-      { day: 7, code: 'P', name: 'Pagi' },
-      { day: 8, code: 'S', name: 'Sore' },
-      { day: 9, code: 'S', name: 'Sore' },
-      { day: 10, code: 'D', name: 'Dording' },
-      { day: 11, code: 'M', name: 'Malam' },
-      { day: 12, code: 'L', name: 'Libur' },
-      { day: 13, code: 'P', name: 'Pagi' },
-      { day: 14, code: 'S', name: 'Sore' },
-      { day: 15, code: 'S', name: 'Sore' },
-      { day: 16, code: 'D', name: 'Dording' },
-      { day: 17, code: 'M', name: 'Malam' },
-      { day: 18, code: 'L', name: 'Libur' },
-      { day: 19, code: 'P', name: 'Pagi' },
-      { day: 20, code: 'P', name: 'Pagi' },
-      { day: 21, code: 'S', name: 'Sore' },
-      { day: 22, code: 'D', name: 'Dording' },
-      { day: 23, code: 'M', name: 'Malam' },
-      { day: 24, code: 'L', name: 'Libur' },
-      { day: 25, code: 'P', name: 'Pagi' },
-      { day: 26, code: 'S', name: 'Sore' },
-      { day: 27, code: 'S', name: 'Sore' },
-      { day: 28, code: 'D', name: 'Dording' },
-      { day: 29, code: 'M', name: 'Malam' },
-      { day: 30, code: 'L', name: 'Libur' },
-    ],
+    shiftSchedule: (() => {
+      const now = new Date();
+      const totalDays = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const schedule = [];
+      for (let d = 1; d <= totalDays; d++) {
+        const date = new Date(now.getFullYear(), now.getMonth(), d);
+        const dayOfWeek = date.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          schedule.push({ day: d, code: 'L', name: 'Libur' });
+        } else if (d === 3 || d === 10 || d === 16 || d === 20 || d === 24 || d === 27) {
+          schedule.push({ day: d, code: 'D', name: 'Dording' });
+        } else if (d === 19) {
+          schedule.push({ day: d, code: 'S', name: 'Sore' });
+        } else {
+          schedule.push({ day: d, code: 'P', name: 'Pagi' });
+        }
+      }
+      return schedule;
+    })(),
   };
 
   // Fixed Tilok Coordinates (RSJ Tampan Pekanbaru, Riau)
@@ -698,14 +685,14 @@
               Jadwal Dinas
             </div>
             <div style="display: flex; gap: 6px;">
-              <span class="jadwal-month-badge" style="background: #10b981; color: #fff;">Tahun 2026</span>
-              <span class="jadwal-month-badge" style="background: #10b981; color: #fff;">Bulan 09</span>
+              <span class="jadwal-month-badge" style="background: #10b981; color: #fff;">Tahun ${new Date().getFullYear()}</span>
+              <span class="jadwal-month-badge" style="background: #10b981; color: #fff;">Bulan ${String(new Date().getMonth() + 1).padStart(2, '0')}</span>
             </div>
           </div>
 
           <div class="shift-calendar-scroll">
             ${state.shiftSchedule.map(item => `
-              <div class="shift-day-pill ${item.day === 3 ? 'today' : ''}" data-day="${item.day}">
+              <div class="shift-day-pill ${item.day === new Date().getDate() ? 'today' : ''}" data-day="${item.day}">
                 <span class="shift-day-num">${item.day}</span>
                 <span class="shift-code-badge shift-${item.code.toLowerCase()}">${item.code}</span>
               </div>

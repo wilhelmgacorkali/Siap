@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Modal,
   Platform,
@@ -25,20 +25,57 @@ const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 const DAY_FULL_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const MONTHS_FULL_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
-// Roster matching Screenshot 1 (Bulan 10 / 2026)
-const DEFAULT_JADWAL_DINAS = {
-  1: 'L', 2: 'C', 3: 'L', 4: 'L', 5: 'P', 6: 'P', 7: 'P', 8: 'L', 9: 'L',
-  10: 'P', 11: 'P', 12: 'P', 13: 'P', 14: 'P', 15: 'P', 16: 'P', 17: 'L', 18: 'L',
-  19: 'P', 20: 'P', 21: 'P', 22: 'P', 23: 'P', 24: 'L', 25: 'L', 26: 'P', 27: 'P',
-  28: 'P', 29: 'P', 30: 'P', 31: 'L'
+/**
+ * Menghasilkan Jadwal Dinas otomatis mengikuti kalender asli bulan & tahun berjalan:
+ * - Hari Minggu & Sabtu: Libur rutin (L)
+ * - Hari Kerja (Senin - Jumat): Shift Pagi (P) 07:00 - 16:00
+ * - Terdapat variasi dinas realistis (C = Cuti, S = Sore)
+ */
+const generateMonthlyJadwalDinas = (year, monthIndex, totalDays) => {
+  const schedule = {};
+  for (let d = 1; d <= totalDays; d++) {
+    const date = new Date(year, monthIndex, d);
+    const dayOfWeek = date.getDay(); // 0 = Minggu, 6 = Sabtu
+
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      schedule[d] = 'L'; // Libur rutin akhir pekan
+    } else {
+      // Hari kerja Senin s/d Jumat
+      if (d === 6) {
+        schedule[d] = 'C'; // Cuti tahunan terdaftar
+      } else if (d === 19) {
+        schedule[d] = 'S'; // Shift Sore
+      } else {
+        schedule[d] = 'P'; // Shift Pagi Reguler
+      }
+    }
+  }
+  return schedule;
 };
 
-// Dording Roster matching Screenshot 2 (Bulan 10 / 2026: mostly '-' with occasional D)
-const DEFAULT_JADWAL_DORDING = {
-  1: '-', 2: 'L', 3: '-', 4: '-', 5: '-', 6: '-', 7: '-', 8: '-', 9: '-',
-  10: 'D', 11: '-', 12: '-', 13: '-', 14: '-', 15: '-', 16: 'D', 17: '-', 18: '-',
-  19: '-', 20: '-', 21: '-', 22: 'D', 23: '-', 24: '-', 25: '-', 26: '-', 27: '-',
-  28: 'D', 29: '-', 30: '-', 31: '-'
+/**
+ * Menghasilkan Jadwal Dording (Dinas Sambung) mengikuti kalender asli bulan & tahun berjalan:
+ * - Hari Libur / Akhir Pekan: (-) Bebas dording
+ * - Hari kerja terjadwal: (D) Dinas Tambahan Rawat Inap RSJ Tampan
+ */
+const generateMonthlyJadwalDording = (year, monthIndex, totalDays) => {
+  const schedule = {};
+  for (let d = 1; d <= totalDays; d++) {
+    const date = new Date(year, monthIndex, d);
+    const dayOfWeek = date.getDay();
+
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      schedule[d] = '-';
+    } else {
+      // Dording terjadwal secara berkala pada hari kerja tertentu
+      if (d === 3 || d === 10 || d === 16 || d === 20 || d === 24 || d === 27) {
+        schedule[d] = 'D'; // Dinas Sambung (Dording)
+      } else {
+        schedule[d] = '-';
+      }
+    }
+  }
+  return schedule;
 };
 
 export default function DashboardScreen({
@@ -78,6 +115,15 @@ export default function DashboardScreen({
   const currentMonthNum = String(now.getMonth() + 1).padStart(2, '0');
   const currentYearNum = now.getFullYear();
   const currentMonthName = MONTHS_FULL_ID[now.getMonth()];
+  const daysInMonth = new Date(currentYearNum, now.getMonth() + 1, 0).getDate();
+
+  const jadwalDinas = useMemo(() => {
+    return generateMonthlyJadwalDinas(currentYearNum, now.getMonth(), daysInMonth);
+  }, [currentYearNum, now.getMonth(), daysInMonth]);
+
+  const jadwalDording = useMemo(() => {
+    return generateMonthlyJadwalDording(currentYearNum, now.getMonth(), daysInMonth);
+  }, [currentYearNum, now.getMonth(), daysInMonth]);
 
   const [selectedDayDetail, setSelectedDayDetail] = useState(null);
   const [selectedCalendarType, setSelectedCalendarType] = useState('dinas'); // 'dinas' | 'dording'
@@ -285,10 +331,10 @@ export default function DashboardScreen({
               </View>
             </View>
 
-            {/* Grid 1 to 31 Days matching Screenshot 1 */}
+            {/* Grid 1 to daysInMonth (Sesuai kalender bulan & tahun ini) */}
             <View style={styles.daysGrid}>
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((dayNum) => {
-                const shiftCode = DEFAULT_JADWAL_DINAS[dayNum] || 'P';
+              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((dayNum) => {
+                const shiftCode = jadwalDinas[dayNum] || 'P';
                 const isToday = dayNum === currentDateNum;
                 const shiftInfo = SHIFT_TYPES[shiftCode] || SHIFT_TYPES.P;
 
@@ -398,10 +444,10 @@ export default function DashboardScreen({
               </View>
             </View>
 
-            {/* Grid 1 to 31 Days matching Screenshot 2 */}
+            {/* Grid 1 to daysInMonth (Sesuai kalender bulan & tahun ini) */}
             <View style={styles.daysGrid}>
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((dayNum) => {
-                const dordingCode = DEFAULT_JADWAL_DORDING[dayNum] || '-';
+              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((dayNum) => {
+                const dordingCode = jadwalDording[dayNum] || '-';
                 const isDordingAssigned = dordingCode !== '-';
                 const isToday = dayNum === currentDateNum;
 
@@ -493,9 +539,15 @@ export default function DashboardScreen({
                   <Text style={[styles.modalTitle, { color: theme.textMain }]}>
                     Detail {selectedCalendarType === 'dording' ? 'Jadwal Dording' : 'Jadwal Dinas'}
                   </Text>
-                  <Text style={[styles.modalSubtitle, { color: theme.textSub }]}>
-                    Tanggal {selectedDayDetail} {currentMonthName} {currentYearNum}
-                  </Text>
+                  {selectedDayDetail && (() => {
+                    const selDate = new Date(currentYearNum, now.getMonth(), selectedDayDetail);
+                    const selDayName = DAY_FULL_ID[selDate.getDay()];
+                    return (
+                      <Text style={[styles.modalSubtitle, { color: theme.textSub }]}>
+                        {selDayName}, {selectedDayDetail} {currentMonthName} {currentYearNum}
+                      </Text>
+                    );
+                  })()}
                 </View>
                 <TouchableOpacity
                   style={[styles.modalCloseBtn, { backgroundColor: theme.pillBg }]}
@@ -507,7 +559,7 @@ export default function DashboardScreen({
 
               {selectedDayDetail && (() => {
                 if (selectedCalendarType === 'dinas') {
-                  const shiftCode = DEFAULT_JADWAL_DINAS[selectedDayDetail] || 'P';
+                  const shiftCode = jadwalDinas[selectedDayDetail] || 'P';
                   const shift = SHIFT_TYPES[shiftCode] || SHIFT_TYPES.P;
                   return (
                     <View style={{ marginVertical: 16, gap: 14 }}>
@@ -538,7 +590,7 @@ export default function DashboardScreen({
                     </View>
                   );
                 } else {
-                  const dordingCode = DEFAULT_JADWAL_DORDING[selectedDayDetail] || '-';
+                  const dordingCode = jadwalDording[selectedDayDetail] || '-';
                   const isAssigned = dordingCode !== '-';
                   return (
                     <View style={{ marginVertical: 16, gap: 14 }}>

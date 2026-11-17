@@ -20,6 +20,10 @@ export default function TilokMap({
   const userLat = customUserPos ? customUserPos[0] : (isOutsideRadius ? latitude + 0.0075 : latitude + 0.0001);
   const userLng = customUserPos ? customUserPos[1] : (isOutsideRadius ? longitude + 0.0065 : longitude - 0.00008);
 
+  const formattedDistance = actualUserDistance >= 1000
+    ? `${(actualUserDistance / 1000).toFixed(1)} km`
+    : `${Math.round(actualUserDistance)} meter`;
+
   // Generate self-contained Leaflet HTML with OpenStreetMap tiles & exact geofence circle
   const leafletHtml = `
 <!DOCTYPE html>
@@ -109,7 +113,7 @@ export default function TilokMap({
       iconAnchor: [7, 7]
     });
     const userMarker = L.marker(userPos, { icon: userIcon }).addTo(map);
-    userMarker.bindTooltip("Posisi Anda (${actualUserDistance}m${isOutsideRadius ? ' - Di Luar Radius' : ''})", {
+    userMarker.bindTooltip("Posisi Anda (${formattedDistance}${isOutsideRadius ? ' - Di Luar Radius' : ' - Dalam Tilok'})", {
       permanent: true,
       direction: 'top',
       className: 'custom-label'
@@ -119,10 +123,16 @@ export default function TilokMap({
     // Garis penghubung ke Tilok jika di luar radius
     const polyline = L.polyline([center, userPos], {
       color: '#ea580c',
-      weight: 2,
+      weight: 2.5,
       dashArray: '6, 6',
-      opacity: 0.8
+      opacity: 0.85
     }).addTo(map);
+
+    // Otomatis sesuaikan viewport peta agar lingkaran Tilok dan posisi pengguna terlihat bersamaan
+    try {
+      const bounds = L.latLngBounds([center, userPos]);
+      map.fitBounds(bounds, { padding: [35, 35], maxZoom: 16 });
+    } catch(e) {}
     ` : ''}
   </script>
 </body>
@@ -173,7 +183,7 @@ export default function TilokMap({
           </View>
           <View style={mapStyles.legendItem}>
             <View style={[mapStyles.legendDotBlue, isOutsideRadius && { backgroundColor: '#ea580c' }]} />
-            <Text style={mapStyles.legendText}>Posisi Anda ({actualUserDistance}m)</Text>
+            <Text style={mapStyles.legendText}>Posisi Anda ({formattedDistance})</Text>
           </View>
         </View>
       </View>
@@ -193,7 +203,7 @@ export default function TilokMap({
                 : 'Radius Tilok Terverifikasi (Valid)'}
             </Text>
             <Text style={[mapStyles.statusDesc, isOutsideRadius && mapStyles.warningDesc]}>
-              Jarak ke titik pusat RSJ: <Text style={{ fontWeight: '800' }}>{actualUserDistance} meter</Text> (Maks: {currentRadius}m)
+              Jarak ke titik pusat RSJ: <Text style={{ fontWeight: '800' }}>{formattedDistance}</Text> (Maks: {currentRadius}m)
             </Text>
           </View>
         </View>
