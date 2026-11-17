@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERD - SIAP RSJ Tampan</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      padding: 32px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding: 24px;
+      background: linear-gradient(135deg, #0f172a, #1e3a5f);
+      border-radius: 16px;
+      color: #fff;
+    }
+    .header h1 { font-size: 24px; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .header h2 { font-size: 15px; font-weight: 400; color: #94a3b8; }
+    .header .badge {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 4px 14px;
+      background: #10b981;
+      color: #fff;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .toolbar {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .toolbar button {
+      padding: 10px 24px;
+      margin: 0 6px;
+      border: 2px solid #0284c7;
+      background: #0284c7;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .toolbar button:hover { background: #0369a1; }
+    .toolbar button.secondary {
+      background: #fff;
+      color: #0284c7;
+    }
+    .toolbar button.secondary:hover { background: #e0f2fe; }
+    .erd-container {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 32px 16px;
+      overflow-x: auto;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .erd-container .mermaid { text-align: center; }
+    .tables-section { margin-top: 32px; }
+    .tables-section h3 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #10b981;
+      display: inline-block;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 28px;
+      font-size: 13px;
+    }
+    table th {
+      background: #0f172a;
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 700;
+    }
+    table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    table tr:nth-child(even) { background: #f8fafc; }
+    table tr:hover { background: #e0f2fe; }
+    .entity-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin: 24px 0 8px 0;
+      color: #0f172a;
+      padding: 8px 14px;
+      background: #ecfdf5;
+      border-left: 4px solid #10b981;
+      border-radius: 0 8px 8px 0;
+    }
+    .pk { color: #dc2626; font-weight: 800; }
+    .fk { color: #0284c7; font-weight: 700; }
+    .shift-dot {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding: 16px;
+      color: #94a3b8;
+      font-size: 12px;
+      border-top: 1px solid #e2e8f0;
+    }
+    @media print {
+      body { padding: 16px; background: #fff; }
+      .toolbar { display: none; }
+      .header { break-after: avoid; }
+      .erd-container { box-shadow: none; border: 1px solid #ccc; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>📊 Entity Relationship Diagram (ERD)</h1>
+    <h2>SIAP RSJ Tampan — Sistem Informasi & Absensi Pegawai</h2>
+    <h2>RS Jiwa Tampan Pekanbaru, Provinsi Riau</h2>
+    <span class="badge">13 Entitas • 12 Relasi • November 2026</span>
+  </div>
+
+  <div class="toolbar">
+    <button onclick="window.print()">🖨️ Print / Simpan PDF</button>
+    <button class="secondary" onclick="downloadSVG()">📥 Download SVG</button>
+    <button class="secondary" onclick="downloadPNG()">🖼️ Download PNG</button>
+  </div>
+
+  <div class="erd-container" id="erd-box">
+    <pre class="mermaid" id="erd-mermaid">
+erDiagram
+    PEGAWAI ||--o{ PRESENSI : "melakukan"
+    PEGAWAI ||--o{ PRESENSI_PDT : "mengajukan"
+    PEGAWAI ||--o{ RIWAYAT_ABSENSI : "memiliki"
+    PEGAWAI }o--|| UNIT_KERJA : "bertugas di"
+    PEGAWAI ||--o| PENGATURAN_USER : "memiliki"
+    PRESENSI }o--|| SHIFT : "menggunakan"
+    PRESENSI }o--|| TITIK_LOKASI : "terverifikasi di"
+    PRESENSI ||--o| FOTO_BIOMETRIK : "dilengkapi"
+    PRESENSI ||--o| SKOR_KEDISIPLINAN : "menghasilkan"
+    PRESENSI_PDT }o--|| TITIK_LOKASI : "di luar radius"
+    PRESENSI_PDT ||--o| FOTO_BIOMETRIK : "dilengkapi"
+    PRESENSI_PDT ||--o| SKOR_KEDISIPLINAN : "menghasilkan"
+    JADWAL_DINAS }o--|| PEGAWAI : "ditugaskan ke"
+    JADWAL_DINAS }o--|| SHIFT : "menggunakan"
+    JADWAL_DORDING }o--|| PEGAWAI : "ditugaskan ke"
+    JADWAL_DORDING }o--|| SHIFT : "menggunakan"
+    SHIFT ||--|| KONFIGURASI_JAM : "diatur oleh"
+
+    PEGAWAI {
+        string nip PK
+        string nama
+        string role
+        string badge
+        string avatar
+        string password
+        boolean is_active
+    }
+
+    UNIT_KERJA {
+        string kode_unit PK
+        string nama_unit
+        string rumah_sakit
+    }
+
+    SHIFT {
+        string kode_shift PK
+        string nama_shift
+        string jam_masuk
+        string jam_pulang
+        string warna
+        string deskripsi
+    }
+
+    KONFIGURASI_JAM {
+        string kode_shift PK
+        string masuk_mulai
+        string masuk_selesai
+        string pulang_mulai
+        string pulang_selesai
+    }
+
+    TITIK_LOKASI {
+        string kode_tilok PK
+        float latitude
+        float longitude
+        int radius_meter
+        string nama_lokasi
+        string zona_waktu
+    }
+
+    PRESENSI {
+        string id PK
+        string nip FK
+        date tanggal
+        string mode
+        string jam_masuk
+        string jam_pulang
+        string kode_tilok FK
+        float jarak_meter
+        float lat_user
+        float long_user
+        string status
+    }
+
+    SKOR_KEDISIPLINAN {
+        string id PK
+        string presensi_id FK
+        string tipe
+        int percentage
+        string kode
+        string potongan
+        string status_text
+        int menit_terlambat
+        string warna
+    }
+
+    FOTO_BIOMETRIK {
+        string id PK
+        string presensi_id FK
+        string tipe
+        text data_uri
+        string match_rate
+        string watermark
+        float gps_latitude
+        float gps_longitude
+        datetime timestamp
+    }
+
+    PRESENSI_PDT {
+        string id PK
+        string nip FK
+        date tanggal
+        string lokasi_dinas
+        string alasan
+        string keterangan
+        string jam_masuk
+        string jam_pulang
+        float jarak_meter
+        string status
+        string approved_by
+    }
+
+    JADWAL_DINAS {
+        int id PK
+        string nip FK
+        int tahun
+        int bulan
+        int tanggal
+        string kode_shift FK
+        string hari
+    }
+
+    JADWAL_DORDING {
+        int id PK
+        string nip FK
+        int tahun
+        int bulan
+        int tanggal
+        string kode_shift FK
+        string pola
+    }
+
+    RIWAYAT_ABSENSI {
+        int id PK
+        string nip FK
+        string tanggal
+        string shift
+        string tipe
+        string masuk
+        string pulang
+        string status
+        string tilok
+        int percentage
+    }
+
+    PENGATURAN_USER {
+        string nip PK
+        boolean is_dark_mode
+        string active_shift
+    }
+    </pre>
+  </div>
+
+  <!-- DETAIL TABEL ENTITAS -->
+  <div class="tables-section">
+    <h3>📋 Detail Atribut Setiap Entitas</h3>
+
+    <div class="entity-title">1. PEGAWAI</div>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Key</th><th>Keterangan</th><th>Contoh</th></tr>
+      <tr><td>nip</td><td>VARCHAR(30)</td><td class="pk">PK</td><td>NIP Pegawai Negeri Sipil</td><td>19890412 201402 2 003</td></tr>
+      <tr><td>nama</td><td>VARCHAR(100)</td><td></td><td>Nama Lengkap + Gelar</td><td>Ners. Fitri Rahmadani, S.Kep</td></tr>
+      <tr><td>role</td><td>VARCHAR(80)</td><td></td><td>Jabatan Fungsional</td><td>Perawat Pelaksana - Shift Sore</td></tr>
+      <tr><td>badge</td><td>VARCHAR(50)</td><td></td><td>Label Tugas</td><td>Ners Rawat Inap</td></tr>
+      <tr><td>avatar</td><td>VARCHAR(5)</td><td></td><td>Inisial Avatar</td><td>FR</td></tr>
+      <tr><td>password</td><td>VARCHAR(255)</td><td></td><td>Kata Sandi (hashed)</td><td>••••••</td></tr>
+      <tr><td>is_active</td><td>BOOLEAN</td><td></td><td>Status Aktif</td><td>true</td></tr>
+    </table>
+
+    <div class="entity-title">2. UNIT_KERJA</div>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Key</th><th>Keterangan</th><th>Contoh</th></tr>
+      <tr><td>kode_unit</td><td>VARCHAR(10)</td><td class="pk">PK</td><td>Kode Unit Kerja</td><td>RI-01</td></tr>
+      <tr><td>nama_unit</td><td>VARCHAR(80)</td><td></td><td>Nama Unit / Instalasi</td><td>Rawat Inap, IGD, Instalasi NAPZA</td></tr>
+      <tr><td>rumah_sakit</td><td>VARCHAR(80)</td><td></td><td>Nama Rumah Sakit</td><td>RS Jiwa Tampan - Pekanbaru</td></tr>
+    </table>
+
+    <div class="entity-title">3. SHIFT</div>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Key</th><th>Keterangan</th><th>Contoh</th></tr>
+      <tr><td>kode_shift</td><td>VARCHAR(3)</td><td class="pk">PK</td><td>Kode Shift</td><td>P / S / M / D / DM / L / C</td></tr>
+      <tr><td>nama_shift</td><td>VARCHAR(30)</td><td></td><td>Nama Shift</td><td>Shift Pagi</td></tr>
+      <tr><td>jam_masuk</td><td>TIME</td><td></td><td>Jam Masuk</td><td>07:00</td></tr>
+      <tr><td>jam_pulang</td><td>TIME</td><td></td><td>Jam Pulang</td><td>16:00</td></tr>
+      <tr><td>warna</td><td>VARCHAR(10)</td><td></td><td>Kode Warna HEX</td><td>#16a34a</td></tr>
+      <tr><td>deskripsi</td><td>TEXT</td><td></td><td>Keterangan Lengkap</td><td>Masuk: 07:00 - 08:00 | Pulang: 14:00 - 16:00</td></tr>
+    </table>
+
+    <div class="entity-title">4. KONFIGURASI_JAM</div>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Key</th><th>Keterangan</th><th>Contoh</th></tr>
+      <tr><td>kode_shift</td><td>VARCHAR(3)</td><td class="pk">PK</td><td>FK → SHIFT.kode_shift</td><td>P</td></tr>
+      <tr><td>masuk_mulai</td><td>TIME</td><td></td><td>Awal window absen masuk</td><td>06:00</td></tr>
+      <tr><td>masuk_selesai</td><td>TIME</td><td></td><td>Akhir window absen masuk</td><td>07:00</td></tr>
+      <tr><td>pulang_mulai</td><td>TIME</td><td></td><td>Awal window absen pulang</td><td>14:00</td></tr>
+      <tr><td>pulang_selesai</td><td>TIME</td><td></td><td>Akhir window absen pulang</td><td>15:00</td></tr>
+    </table>
+
+    <div class="entity-title">5. TITIK_LOKASI (Tilok)</div>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Key</th><th>Keterangan</th><th>Contoh</th></tr>
+      <tr><td>kode_tilok</td><td>VARCHAR(10)</td><td class="pk">PK</td><td>Kode Tilok Resmi</td><td>TILOK-RSJ-01</td></tr>
+      <tr><td>latitude</td><td>DECIMAL(10,6)</td><td></td><td>Koordinat Lintang</td><td>0.465791</td></tr>
+      <tr><td>longitude</td><td>DECIMAL(10,6)</td><td></td><td>Koordinat Bujur</td><td>101.381957</td></tr>
+      <tr><td>radius_meter</td><td>INT</td><td></td><td>Radius Geofencing</td><td>200</td></tr>
+      <tr><td>nama_lokasi</td><td>VARCHAR(100)</td><td></td><td>Nama Lokasi</td><td>RS Jiwa Tampan - Pekanbaru</td></tr>
+      <tr><td>zona_waktu</td><td>VARCHAR(5)</td><td></td><td>Zona Waktu</td><td>WIB</td></tr>
+    </table>
+
+    <div class="entity-title">6. PRESENSI</div>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Key</th><th>Keterangan</th><th>Contoh</th></tr>
+      <tr><td>id</td><td>VARCHAR(20)</td><td class="pk">PK</td><td>ID Transaksi</td><td>PRE-20261116-001</td></tr>
+      <tr><td>nip</td><td>VARCHAR(30)</td><td class="fk">FK</td><td>→ PEGAWAI.nip</td><td>19890412 201402 2 003</td></tr>
+      <tr><td>tanggal</td><td>DATE</td><td></td><td>Tanggal Presensi</td><td>2026-11-16</td></tr>
+      <tr><td>mode</td><td>ENUM</td><td></td><td>Jenis Presensi</td><td>sekarang / dording</td></tr>
+      <tr><td>jam_masuk</td><td>TIME</td><td></td><td>Waktu Absen Masuk</td><td>07:05:22</td></tr>
+      <tr><td>jam_pulang</td><td>TIME</td><td></td><td>Waktu Absen Pulang</td><td>14:02:10</td></tr>
+      <tr><td>kode_tilok</td><td>VARCHAR(10)</td><td class="fk">FK</td><td>→ TITIK_LOKASI.kode_tilok</td><td>TILOK-RSJ-01</td></tr>
+      <tr><td>jarak_meter</td><td>FLOAT</td><td></td><td>Jarak dari pusat Tilok</td><td>14</td></tr>
+      <tr><td>lat_user</td><td>DECIMAL(10,6)</td><td></td><td>Latitude GPS pegawai</td><td>0.465801</td></tr>
+      <tr><td>long_user</td><td>DECIMAL(10,6)</td><td></td><td>Longitude GPS pegawai</td><td>101.381960</td></tr>
+      <tr><td>status</td><td>VARCHAR(30)</td><td></td><td>Status Kehadiran</td><td>Hadir / Terlambat</td></tr>
+    </table>
+
+    <div class="entity-title">7. SKOR_KEDISIPLINAN</div>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Key</th><th>Keterangan</th><th>Contoh</th></tr>
+      <tr><td>id</td><td>VARCHAR(20)</td><td class="pk">PK</td><td>ID Skor</td><td>SK-001</td></tr>
+      <tr><td>presensi_id</td><td>VARCHAR(20)</td><td class="fk">FK</td><td>→ PRESENSI.id</td><td>PRE-20261116-001</td></tr>
+      <tr><td>tipe</td><td>ENUM</td><td></td><td>Masuk atau Pulang</td><td>masuk / pulang</td></tr>
+      <tr><td>percentage</td><td>INT</td><td></td><td>Persentase (0-100)</td><td>100</td></tr>
+      <tr><td>kode</td><td>VARCHAR(5)</td><td></td><td>Kode Skor</td><td>SWM / SWP / TL</td></tr>
+      <tr><td>potongan</td><td>VARCHAR(10)</td><td></td><td>Potongan TPP</td><td>0.00% / 1.25%</td></tr>
+      <tr><td>status_text</td><td>VARCHAR(60)</td><td></td><td>Teks Status</td><td>Sesuai Waktu Masuk (SWM)</td></tr>
+      <tr><td>menit_terlambat</td><td>INT</td><td></td><td>Jumlah Menit Terlambat</td><td>0</td></tr>
+      <tr><td>warna</td><td>VARCHAR(10)</td><td></td><td>Warna Badge</td><td>#16a34a</td></tr>
+    </table>
+
+    <div class="entity-title">8. FOTO_BIOMETRIK</div>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Key</th><th>Keterangan</th><th>Contoh</th></tr>
+      <tr><td>id</td><td>VARCHAR(20)</td><td class="pk">PK</td><td>ID Foto</td><td>FB-001</td></tr>
+      <tr><td>presensi_id</td><td>VARCHAR(20)</td><td class="fk">FK</td><td>→ PRESENSI.id</td><td>PRE-20261116-001</td></tr>
+      <tr><td>tipe</td><td>ENUM</td><td></td><td>Foto Masuk / Pulang</td><td>masuk / pulang</td></tr>
+      <tr><td>data_uri</td><td>LONGTEXT</td><td></td><td>Base64 Data URI Foto</td><td>data:image/png;base64,...</td></tr>
+      <tr><td>match_rate</td><td>VARCHAR(10)</td><td></td><td>Persentase Face Match</td><td>99.4%</td></tr>
+      <tr><td>watermark</td><td>VARCHAR(100)</td><td></td><td>Teks Watermark Resmi</td><td>SIAP RSJ TAMPAN VERIFIED</td></tr>
+      <tr><td>gps_latitude</td><td>DECIMAL(10,6)</td><td></td><td>Latitude saat foto</td><td>0.465791</td></tr>
+      <tr><td>gps_longitude</td><td>DECIMAL(10,6)</td><td></td><td>Longitude saat foto</td><td>101.381957</td></tr>
+      <tr><td>timestamp</td><td>DATETIME</td><td></td><td>Waktu foto diambil</td><td>2026-11-16 07:05:22</td></tr>
+    </table>
+
+    <div class="entity-title">9. PRESENSI_PDT (Presensi Diluar Tilok)</div>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Key</th><th>Keterangan</th><th>Contoh</th></tr>
+      <tr><td>id</td><td>VARCHAR(10)</td><td class="pk">PK</td><td>ID Submission PDT</td><td>PDT-001</td></tr>
+      <tr><td>nip</td><td>VARCHAR(30)</td><td class="fk">FK</td><td>→ PEGAWAI.nip</td><td>19890412 201402 2 003</td></tr>
+      <tr><td>tanggal</td><td>DATE</td><td></td><td>Tanggal PDT</td><td>2026-11-16</td></tr>
+      <tr><td>lokasi_dinas</td><td>VARCHAR(100)</td><td></td><td>Lokasi Dinas Luar</td><td>Dinas Kesehatan Prov. Riau</td></tr>
+      <tr><td>alasan</td><td>TEXT</td><td></td><td>Alasan PDT</td><td>Pelatihan Pelayanan Jiwa</td></tr>
+      <tr><td>keterangan</td><td>TEXT</td><td></td><td>Detail Tambahan</td><td>Pelatihan 3 hari</td></tr>
+      <tr><td>jam_masuk</td><td>TIME</td><td></td><td>Waktu Absen PDT Masuk</td><td>08:00:00</td></tr>
+      <tr><td>jam_pulang</td><td>TIME</td><td></td><td>Waktu Absen PDT Pulang</td><td>16:00:00</td></tr>
+      <tr><td>jarak_meter</td><td>FLOAT</td><td></td><td>Jarak dari Tilok</td><td>1150</td></tr>
+      <tr><td>status</td><td>ENUM</td><td></td><td>Status Persetujuan</td><td>Pending / Disetujui / Ditolak</td></tr>
+      <tr><td>approved_by</td><td>VARCHAR(30)</td><td class="fk">FK</td><td>→ PEGAWAI.nip (Atasan)</td><td>19920101 201801 1 001</td></tr>
+    </table>
+
+    <div class="entity-title">10. JADWAL_DINAS</div>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Key</th><th>Keterangan</th><th>Contoh</th></tr>
+      <tr><td>id</td><td>INT</td><td class="pk">PK</td><td>ID Jadwal (Auto Increment)</td><td>1</td></tr>
+      <tr><td>nip</td><td>VARCHAR(30)</td><td class="fk">FK</td><td>→ PEGAWAI.nip</td><td>19890412 201402 2 003</td></tr>
+      <tr><td>tahun</td><td>INT</td><td></td><td>Tahun Kalender</td><td>2026</td></tr>
+      <tr><td>bulan</td><td>INT</td><td></td><td>Bulan (1-12)</td><td>11</td></tr>
+      <tr><td>tanggal</td><td>INT</td><td></td><td>Tanggal (1-31)</td><td>16</td></tr>
+      <tr><td>kode_shift</td><td>VARCHAR(3)</td><td class="fk">FK</td><td>→ SHIFT.kode_shift</td><td>P</td></tr>
+      <tr><td>hari</td><td>VARCHAR(10)</td><td></td><td>Nama Hari</td><td>Senin</td></tr>
+    </table>
+
+    <div class="entity-title">11. JADWAL_DORDING</div>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Key</th><th>Keterangan</th><th>Contoh</th></tr>
+      <tr><td>id</td><td>INT</td><td class="pk">PK</td><td>ID Jadwal Dording</td><td>1</td></tr>
+      <tr><td>nip</td><td>VARCHAR(30)</td><td class="fk">FK</td><td>→ PEGAWAI.nip</td><td>19890412 201402 2 003</td></tr>
+      <tr><td>tahun</td><td>INT</td><td></td><td>Tahun Kalender</td><td>2026</td></tr>
+      <tr><td>bulan</td><td>INT</td><td></td><td>Bulan (1-12)</td><td>11</td></tr>
+      <tr><td>tanggal</td><td>INT</td><td></td><td>Tanggal (1-31)</td><td>16</td></tr>
+      <tr><td>kode_shift</td><td>VARCHAR(3)</td><td class="fk">FK</td><td>→ SHIFT.kode_shift</td><td>D / -</td></tr>
+      <tr><td>pola</td><td>ENUM</td><td></td><td>Pola Dording</td><td>pagi_siang / siang_malam / malam_pagi</td></tr>
+    </table>
+
+    <div class="entity-title">12. RIWAYAT_ABSENSI</div>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Key</th><th>Keterangan</th><th>Contoh</th></tr>
+      <tr><td>id</td><td>INT</td><td class="pk">PK</td><td>ID Riwayat</td><td>1</td></tr>
+      <tr><td>nip</td><td>VARCHAR(30)</td><td class="fk">FK</td><td>→ PEGAWAI.nip</td><td>19890412 201402 2 003</td></tr>
+      <tr><td>tanggal</td><td>VARCHAR(20)</td><td></td><td>Tanggal</td><td>02 Nov 2026</td></tr>
+      <tr><td>shift</td><td>VARCHAR(50)</td><td></td><td>Deskripsi Shift</td><td>Perawat - Shift Siang</td></tr>
+      <tr><td>tipe</td><td>ENUM</td><td></td><td>Jenis</td><td>reguler / dording / pdt</td></tr>
+      <tr><td>masuk</td><td>TIME</td><td></td><td>Jam Masuk</td><td>13:01:40</td></tr>
+      <tr><td>pulang</td><td>TIME</td><td></td><td>Jam Pulang</td><td>21:05:12</td></tr>
+      <tr><td>status</td><td>VARCHAR(30)</td><td></td><td>Status Kehadiran</td><td>Hadir (100%)</td></tr>
+      <tr><td>tilok</td><td>VARCHAR(60)</td><td></td><td>Lokasi Verifikasi</td><td>RSJ Tampan</td></tr>
+      <tr><td>percentage</td><td>INT</td><td></td><td>Persentase Kehadiran</td><td>100</td></tr>
+    </table>
+
+    <div class="entity-title">13. PENGATURAN_USER</div>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Key</th><th>Keterangan</th><th>Contoh</th></tr>
+      <tr><td>nip</td><td>VARCHAR(30)</td><td class="pk">PK/FK</td><td>→ PEGAWAI.nip</td><td>19890412 201402 2 003</td></tr>
+      <tr><td>is_dark_mode</td><td>BOOLEAN</td><td></td><td>Preferensi Tema Gelap</td><td>true</td></tr>
+      <tr><td>active_shift</td><td>VARCHAR(10)</td><td></td><td>Shift Aktif</td><td>sore</td></tr>
+    </table>
+
+    <!-- TABEL KODE SHIFT -->
+    <h3 style="margin-top: 40px;">🏷️ Referensi Kode Shift</h3>
+    <table>
+      <tr><th>Kode</th><th>Nama Shift</th><th>Jam Kerja</th><th>Warna</th></tr>
+      <tr><td><strong>P</strong></td><td>Shift Pagi</td><td>07:00 – 16:00</td><td><span class="shift-dot" style="background:#16a34a"></span> #16a34a</td></tr>
+      <tr><td><strong>S</strong></td><td>Shift Sore</td><td>13:00 – 21:00</td><td><span class="shift-dot" style="background:#0284c7"></span> #0284c7</td></tr>
+      <tr><td><strong>M</strong></td><td>Shift Malam</td><td>20:30 – 07:30</td><td><span class="shift-dot" style="background:#7c3aed"></span> #7c3aed</td></tr>
+      <tr><td><strong>D</strong></td><td>Shift Dording</td><td>13:00 – 21:00</td><td><span class="shift-dot" style="background:#d97706"></span> #d97706</td></tr>
+      <tr><td><strong>DM</strong></td><td>Dording Malam</td><td>19:30 – 08:00</td><td><span class="shift-dot" style="background:#ea580c"></span> #ea580c</td></tr>
+      <tr><td><strong>C</strong></td><td>Cuti Resmi</td><td>Cuti Tahunan / Sakit</td><td><span class="shift-dot" style="background:#343a40"></span> #343a40</td></tr>
+      <tr><td><strong>L</strong></td><td>Libur / Off</td><td>Bebas Tugas</td><td><span class="shift-dot" style="background:#6c757d"></span> #6c757d</td></tr>
+    </table>
+
+    <!-- RUMUS SKOR TPP -->
+    <h3 style="margin-top: 40px;">📐 Rumus Skor Kedisiplinan (Potongan TPP)</h3>
+    <table>
+      <tr><th>Keterlambatan</th><th>Persentase</th><th>Potongan TPP</th><th>Kode</th></tr>
+      <tr><td>0 menit (Tepat Waktu)</td><td>100%</td><td>0.00%</td><td>SWM / SWP</td></tr>
+      <tr><td>1 – 15 menit</td><td>95%</td><td>1.25%</td><td>TL</td></tr>
+      <tr><td>16 – 30 menit</td><td>90%</td><td>2.50%</td><td>TL</td></tr>
+      <tr><td>31 – 60 menit</td><td>85%</td><td>3.75%</td><td>TL</td></tr>
+      <tr><td>61 – 90 menit</td><td>80%</td><td>5.00%</td><td>TL</td></tr>
+      <tr><td>91 – 120 menit</td><td>70%</td><td>7.50%</td><td>TL</td></tr>
+      <tr><td>&gt; 120 menit</td><td>Dinamis (min 25%)</td><td>Dinamis</td><td>TL</td></tr>
+    </table>
+  </div>
+
+  <div class="footer">
+    ERD SIAP RSJ Tampan — Sistem Informasi & Absensi Pegawai<br>
+    RS Jiwa Tampan Pekanbaru, Provinsi Riau — Generated November 2026
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      er: { useMaxWidth: true, fontSize: 13 },
+    });
+
+    function downloadSVG() {
+      const svg = document.querySelector('#erd-box svg');
+      if (!svg) { alert('Diagram belum selesai dirender. Tunggu sebentar lalu coba lagi.'); return; }
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ERD-SIAP-RSJ-Tampan.svg';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadPNG() {
+      const svg = document.querySelector('#erd-box svg');
+      if (!svg) { alert('Diagram belum selesai dirender. Tunggu sebentar lalu coba lagi.'); return; }
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new window.Image();
+      img.onload = function() {
+        canvas.width = img.width * 2;
+        canvas.height = img.height * 2;
+        ctx.scale(2, 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        const pngUrl = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = pngUrl;
+        a.download = 'ERD-SIAP-RSJ-Tampan.png';
+        a.click();
+      };
+      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    }
+  </script>
+</body>
+</html>

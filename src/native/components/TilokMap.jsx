@@ -16,7 +16,7 @@ export default function TilokMap({
   const [mapZoom, setMapZoom] = useState(isOutsideRadius ? 15 : 16);
 
   // Tentukan posisi user (apakah di dalam radius atau di luar radius)
-  const actualUserDistance = isOutsideRadius ? (userDistance > 200 ? userDistance : 1150) : (userDistance < 200 ? userDistance : 14);
+  const actualUserDistance = typeof userDistance === 'number' ? userDistance : 14;
   const userLat = customUserPos ? customUserPos[0] : (isOutsideRadius ? latitude + 0.0075 : latitude + 0.0001);
   const userLng = customUserPos ? customUserPos[1] : (isOutsideRadius ? longitude + 0.0065 : longitude - 0.00008);
 
