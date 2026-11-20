@@ -27,11 +27,14 @@ export default function AttendanceScreen({
   const activeDarkMode = theme?.isDark ?? isDarkMode;
   const [activeType, setActiveType] = useState(attendanceType || 'masuk');
   const [dordingPattern, setDordingPattern] = useState('pagi_siang'); // 'pagi_siang' | 'siang_malam' | 'malam_pagi'
-  // Default terverifikasi di area RS Jiwa Tampan (14 meter dari titik koordinat resmi)
-  const [userDistance, setUserDistance] = useState(14);
-  const [userCoords, setUserCoords] = useState({ latitude: 0.465891, longitude: 101.381877 });
+  
+  // Koordinat dan jarak GPS pengguna (awalnya NULL - tidak memalsukan posisi di RSJ jika izin belum diberikan)
+  const [userDistance, setUserDistance] = useState(null);
+  const [userCoords, setUserCoords] = useState(null);
   const [gpsAccuracy, setGpsAccuracy] = useState(null);
-  const [isLocating, setIsLocating] = useState(false);
+  const [isLocating, setIsLocating] = useState(true);
+  const [gpsPermissionState, setGpsPermissionState] = useState('requesting'); // 'requesting' | 'granted' | 'denied' | 'error'
+  const [gpsErrorMessage, setGpsErrorMessage] = useState(null);
   const [geofenceAlertVisible, setGeofenceAlertVisible] = useState(false);
   const [pendingType, setPendingType] = useState('masuk');
 
@@ -54,6 +57,7 @@ export default function AttendanceScreen({
 
   const fetchRealLocation = async () => {
     setIsLocating(true);
+    setGpsErrorMessage(null);
     try {
       // 1. Coba HTML5 Geolocation asli browser / smartphone
       if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.geolocation) {
@@ -66,67 +70,56 @@ export default function AttendanceScreen({
             setUserCoords({ latitude: lat, longitude: lng });
 
             const rawDist = getDistanceFromLatLonInMeters(lat, lng, TILOK_LAT, TILOK_LONG);
-
-            // Toleransi Akurasi Realistis:
-            // Kompleks RS Jiwa Tampan Pekanbaru membentang luas (gedung administrasi, rawat inap, IGD, NAPZA).
-            // Di dalam gedung (indoor), sinyal satelit GPS pada laptop/smartphone sering bergeser 50-350m.
-            // Jika perangkat terdeteksi dalam radius kompleks (<= 350m) ATAU (rawDist - accuracy) <= 200m:
-            if (rawDist <= 350 || (rawDist - accuracy) <= 200) {
-              // Pengguna sah berada di dalam area RS Jiwa Tampan!
-              setUserDistance(Math.min(14, Math.round(rawDist)));
-            } else {
-              // Jika perangkat benar-benar terdeteksi jauh di luar kota/wilayah RSJ
-              setUserDistance(Math.round(rawDist));
-            }
+            const calculatedDistance = Math.round(rawDist);
+            setUserDistance(calculatedDistance);
+            setGpsPermissionState('granted');
+            setGpsErrorMessage(null);
             setIsLocating(false);
           },
           (err) => {
-            console.warn('GPS browser tidak dapat membaca satelit, gunakan lokasi sah RSJ Tampan:', err);
-            // PENTING: Jika sinyal GPS tidak terbaca, jangan buang pegawai ke 1.15km!
-            // Tetap kunci lokasi sah di RSJ Tampan (14m) agar presensi tidak terblokir.
-            setUserCoords({ latitude: TILOK_LAT + 0.0001, longitude: TILOK_LONG - 0.00008 });
-            setUserDistance(14);
+            console.warn('Izin lokasi ditolak atau GPS tidak aktif:', err);
+            // Jangan memalsukan posisi di RSJ Tampan jika izin ditolak/mati!
+            setUserCoords(null);
+            setUserDistance(null);
+            setGpsPermissionState('denied');
+            if (err.code === 1) {
+              setGpsErrorMessage('Izin lokasi ditolak di browser. Aktifkan izin lokasi untuk memverifikasi Tilok.');
+            } else if (err.code === 2) {
+              setGpsErrorMessage('Sinyal GPS tidak tersedia pada perangkat Anda.');
+            } else {
+              setGpsErrorMessage('Waktu pencarian sinyal GPS habis. Silakan klik Cek GPS kembali.');
+            }
             setIsLocating(false);
           },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
         return;
       }
 
-      await fallbackExpoLocation();
-    } catch (error) {
-      console.warn('Geolocation catch:', error);
-      setUserCoords({ latitude: TILOK_LAT + 0.0001, longitude: TILOK_LONG - 0.00008 });
-      setUserDistance(14);
-      setIsLocating(false);
-    }
-  };
-
-  const fallbackExpoLocation = async () => {
-    try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
+      const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
-        let location = await Location.getCurrentPositionAsync({
+        const location = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
         const lat = location.coords.latitude;
         const lng = location.coords.longitude;
         setUserCoords({ latitude: lat, longitude: lng });
         const rawDist = getDistanceFromLatLonInMeters(lat, lng, TILOK_LAT, TILOK_LONG);
-        if (rawDist <= 350) {
-          setUserDistance(14);
-        } else {
-          setUserDistance(Math.round(rawDist));
-        }
+        setUserDistance(Math.round(rawDist));
+        setGpsPermissionState('granted');
+        setGpsErrorMessage(null);
       } else {
-        // Jika izin belum diberikan, default tetap di dalam area RSJ Tampan
-        setUserCoords({ latitude: TILOK_LAT + 0.0001, longitude: TILOK_LONG - 0.00008 });
-        setUserDistance(14);
+        setUserCoords(null);
+        setUserDistance(null);
+        setGpsPermissionState('denied');
+        setGpsErrorMessage('Izin akses lokasi ditolak pada aplikasi.');
       }
     } catch (err) {
-      console.warn('Fallback Expo location error:', err);
-      setUserCoords({ latitude: TILOK_LAT + 0.0001, longitude: TILOK_LONG - 0.00008 });
-      setUserDistance(14);
+      console.warn('Location detection catch:', err);
+      setUserCoords(null);
+      setUserDistance(null);
+      setGpsPermissionState('error');
+      setGpsErrorMessage('Gagal menghubungkan sensor GPS perangkat.');
     } finally {
       setIsLocating(false);
     }
@@ -283,6 +276,25 @@ export default function AttendanceScreen({
 
   const handleOpenAbsen = (type) => {
     setActiveType(type);
+
+    // 1. Wajib memiliki izin lokasi GPS aktif (tidak boleh bypass jika izin lokasi belum diberikan)
+    if (userCoords === null || userDistance === null) {
+      if (Platform.OS === 'web') {
+        window.alert(
+          '⚠️ Izin Akses Lokasi (GPS) Diperlukan!\n\n' +
+          'Aplikasi tidak dapat memverifikasi presensi karena Anda belum mengizinkan akses lokasi di browser.\n\n' +
+          'Silakan klik "Allow / Izinkan" pada izin lokasi browser Anda, lalu tekan tombol "🔄 Cek GPS" di bawah peta.'
+        );
+      } else {
+        Alert.alert(
+          'Izin GPS Diperlukan!',
+          'Aplikasi tidak dapat memverifikasi presensi karena izin lokasi (GPS) belum aktif atau ditolak. Silakan izinkan akses lokasi pada perangkat Anda, lalu tekan "Cek GPS".'
+        );
+      }
+      fetchRealLocation();
+      return;
+    }
+
     if (userDistance > 200) {
       // User berada di luar radius Tilok resmi (200m)
       setPendingType(type);
@@ -311,86 +323,244 @@ export default function AttendanceScreen({
   const masukDisplayDate = attendance?.masukDate || attendance?.date || allAttendance?.date || todayYMD;
   const pulangDisplayDate = attendance?.pulangDate || attendance?.date || allAttendance?.date || todayYMD;
 
+  // Cek apakah hari ini adalah hari libur akhir pekan (Sabtu & Minggu) sesuai SIAP RSJ Tampan
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 = Minggu, 6 = Sabtu
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  const [scheduleStatus, setScheduleStatus] = useState(isWeekend ? 'libur' : 'dinas');
+
+  const getLiburDateRange = () => {
+    const pad = (n) => String(n).padStart(2, '0');
+    const startStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const nextD = new Date(now);
+    if (dayOfWeek === 6) {
+      nextD.setDate(now.getDate() + 1);
+    } else if (dayOfWeek === 0) {
+      nextD.setDate(now.getDate());
+    } else {
+      nextD.setDate(now.getDate() + 1);
+    }
+    const endStr = `${nextD.getFullYear()}-${pad(nextD.getMonth() + 1)}-${pad(nextD.getDate())}`;
+    return `${startStr} hingga ${endStr}`;
+  };
+
   return (
     <ScrollView style={[styles.scroll, theme && { backgroundColor: theme.bgMain }]} showsVerticalScrollIndicator={false}>
       <View style={styles.page}>
-        {/* Tombol Pemilih Cepat: Presensi Shift 1 vs Presensi Dording Shift 2 */}
-        <View
-          style={{
-            flexDirection: 'row',
-            backgroundColor: theme?.cardSolid || '#ffffff',
-            borderRadius: 14,
-            padding: 4,
-            marginBottom: 12,
-            borderWidth: 1,
-            borderColor: theme?.border || '#e2e8f0',
-            gap: 6,
-          }}
-        >
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              paddingVertical: 10,
-              paddingHorizontal: 8,
-              borderRadius: 10,
-              alignItems: 'center',
-              backgroundColor: !isDording ? '#0284c7' : (theme?.pillBg || '#f8fafc'),
-            }}
-            onPress={() => onSwitchMode && onSwitchMode('sekarang')}
-          >
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: '800',
-                color: !isDording ? '#ffffff' : (theme?.textMain || '#475569'),
-              }}
-            >
-              Presensi (Shift 1)
-            </Text>
-            <Text
-              style={{
-                fontSize: 10,
-                color: !isDording ? '#e0f2fe' : (theme?.textSub || '#94a3b8'),
-                marginTop: 2,
-                fontWeight: '600',
-              }}
-            >
-              {s1Masuk ? `Masuk ${s1Masuk}` : 'Belum Absen Masuk'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              paddingVertical: 10,
-              paddingHorizontal: 8,
-              borderRadius: 10,
-              alignItems: 'center',
-              backgroundColor: isDording ? '#d97706' : (theme?.pillBg || '#f8fafc'),
-            }}
-            onPress={() => onSwitchMode && onSwitchMode('dording')}
-          >
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: '800',
-                color: isDording ? '#ffffff' : (theme?.textMain || '#475569'),
-              }}
-            >
-              Presensi Dording (Shift 2)
-            </Text>
-            <Text
-              style={{
-                fontSize: 10,
-                color: isDording ? '#fef3c7' : '#94a3b8',
-                marginTop: 2,
-                fontWeight: '600',
-              }}
-            >
-              {s2Masuk ? `Masuk ${s2Masuk}` : 'Belum Absen Masuk'}
-            </Text>
-          </TouchableOpacity>
+        {/* Header Breadcrumb Sesuai Tampilan Asli SIAP RSJ Tampan */}
+        <View style={{ marginBottom: 14 }}>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: theme?.textMain || '#0f172a' }}>
+            Pegawai Absensi
+          </Text>
+          <Text style={{ fontSize: 12, color: theme?.textMuted || '#64748b', marginTop: 3 }}>
+            <Text style={{ color: '#0284c7', fontWeight: '600' }}>Home</Text> / Pegawai Absensi
+          </Text>
         </View>
+
+        {scheduleStatus === 'libur' ? (
+          /* ================================================================= */
+          /* TAMPILAN RESMI RSJ TAMPAN: SAAT SEDANG LIBUR / OFF DINAS         */
+          /* ================================================================= */
+          <View
+            style={{
+              backgroundColor: theme?.cardSolid || '#ffffff',
+              borderRadius: 14,
+              padding: 16,
+              borderWidth: 1,
+              borderColor: theme?.border || '#e2e8f0',
+              marginBottom: 16,
+              ...(Platform.OS === 'web' ? { boxShadow: '0 4px 16px rgba(0,0,0,0.06)' } : {}),
+            }}
+          >
+            {/* 1. Kotak Hijau Notifikasi Resmi Sesuai Foto */}
+            <View
+              style={{
+                backgroundColor: '#16a34a',
+                borderRadius: 8,
+                padding: 18,
+                marginBottom: 16,
+              }}
+            >
+              <Text
+                style={{
+                  color: '#ffffff',
+                  fontSize: 13,
+                  lineHeight: 22,
+                  fontWeight: '500',
+                }}
+              >
+                Saat ini Anda tidak memiliki jadwal kerja yang terjadwal.{'\n'}
+                Berdasarkan sistem, Anda sedang dalam masa{'\n'}
+                Libur terhitung mulai tanggal{'\n\n'}
+                <Text style={{ fontWeight: '800' }}>{getLiburDateRange()}.</Text>{'\n\n'}
+                Jika terdapat kekeliruan atau ada hal yang ingin ditanyakan, silakan hubungi Admin. Terima kasih.
+              </Text>
+            </View>
+
+            {/* 2. Peta Leaflet Terintegrasi Sesuai Foto Pengguna */}
+            <TilokMap
+              cleanMode={true}
+              latitude={TILOK_LAT}
+              longitude={TILOK_LONG}
+              radius={200}
+              userDistance={userDistance}
+              isOutsideRadius={userDistance > 200}
+              customUserPos={userCoords ? [userCoords.latitude, userCoords.longitude] : [0.4485, 101.4425]}
+              height={260}
+            />
+
+            {/* Kontrol Cepat GPS & Pengujian Demo */}
+            <View
+              style={{
+                marginTop: 18,
+                paddingTop: 14,
+                borderTopWidth: 1,
+                borderTopColor: theme?.borderSubtle || '#f1f5f9',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 8,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#16a34a' }} />
+                <Text style={{ fontSize: 11, color: theme?.textMuted || '#64748b' }}>
+                  Status: <Text style={{ color: '#16a34a', fontWeight: '800' }}>Masa Libur Terjadwal</Text>
+                </Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#f1f5f9',
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 6,
+                  }}
+                  onPress={fetchRealLocation}
+                >
+                  <Text style={{ fontSize: 10.5, fontWeight: '700', color: '#0284c7' }}>
+                    🔄 Perbarui GPS
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#0284c7',
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 6,
+                  }}
+                  onPress={() => setScheduleStatus('dinas')}
+                >
+                  <Text style={{ fontSize: 10.5, fontWeight: '800', color: '#ffffff' }}>
+                    ⚡ Uji Hari Kerja (Buka Tombol Absen)
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        ) : (
+          /* ================================================================= */
+          /* TAMPILAN RESMI HARI KERJA (BILA MEMILIKI JADWAL DINAS AKTIF)      */
+          /* ================================================================= */
+          <>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 10 }}>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#ecfdf5',
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: '#10b981',
+                }}
+                onPress={() => setScheduleStatus('libur')}
+              >
+                <Text style={{ fontSize: 10, fontWeight: '700', color: '#059669' }}>
+                  🗓️ Tampilkan Layar Hari Libur (Sesuai Foto)
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Tombol Pemilih Cepat: Presensi Shift 1 vs Presensi Dording Shift 2 */}
+            <View
+              style={{
+                flexDirection: 'row',
+                backgroundColor: theme?.cardSolid || '#ffffff',
+                borderRadius: 14,
+                padding: 4,
+                marginBottom: 12,
+                borderWidth: 1,
+                borderColor: theme?.border || '#e2e8f0',
+                gap: 6,
+              }}
+            >
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  paddingHorizontal: 8,
+                  borderRadius: 10,
+                  alignItems: 'center',
+                  backgroundColor: !isDording ? '#0284c7' : (theme?.pillBg || '#f8fafc'),
+                }}
+                onPress={() => onSwitchMode && onSwitchMode('sekarang')}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: '800',
+                    color: !isDording ? '#ffffff' : (theme?.textMain || '#475569'),
+                  }}
+                >
+                  Presensi (Shift 1)
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: !isDording ? '#e0f2fe' : (theme?.textSub || '#94a3b8'),
+                    marginTop: 2,
+                    fontWeight: '600',
+                  }}
+                >
+                  {s1Masuk ? `Masuk ${s1Masuk}` : 'Belum Absen Masuk'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  paddingHorizontal: 8,
+                  borderRadius: 10,
+                  alignItems: 'center',
+                  backgroundColor: isDording ? '#d97706' : (theme?.pillBg || '#f8fafc'),
+                }}
+                onPress={() => onSwitchMode && onSwitchMode('dording')}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: '800',
+                    color: isDording ? '#ffffff' : (theme?.textMain || '#475569'),
+                  }}
+                >
+                  Presensi Dording (Shift 2)
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: isDording ? '#fef3c7' : '#94a3b8',
+                    marginTop: 2,
+                    fontWeight: '600',
+                  }}
+                >
+                  {s2Masuk ? `Masuk ${s2Masuk}` : 'Belum Absen Masuk'}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
         {/* Banner with Mode Info */}
         <View
@@ -517,18 +687,23 @@ export default function AttendanceScreen({
                     width: 10,
                     height: 10,
                     borderRadius: 5,
-                    backgroundColor: userDistance !== null && userDistance <= 200 ? '#059669' : '#ea580c',
+                    backgroundColor:
+                      userCoords === null
+                        ? '#dc2626'
+                        : userDistance !== null && userDistance <= 200
+                        ? '#059669'
+                        : '#ea580c',
                   }}
                 />
               )}
               <Text style={{ fontSize: 11.5, fontWeight: '800', color: theme?.textMain || '#0f172a' }}>
                 {isLocating
-                  ? 'Mendeteksi sinyal GPS...'
-                  : userDistance !== null
-                  ? userDistance <= 200
-                    ? `Dalam Radius Tilok (${Math.round(userDistance)}m - Sah)`
-                    : `Di Luar Radius (${userDistance >= 1000 ? (userDistance/1000).toFixed(1) + ' km' : Math.round(userDistance) + 'm'})`
-                  : 'Lokasi belum terdeteksi'}
+                  ? 'Mencari sinyal GPS...'
+                  : userCoords === null
+                  ? 'Izin Lokasi Belum Aktif / Ditolak'
+                  : userDistance !== null && userDistance <= 200
+                  ? `Dalam Radius Tilok (${Math.round(userDistance)}m - Sah)`
+                  : `Di Luar Radius (${userDistance >= 1000 ? (userDistance/1000).toFixed(1) + ' km' : Math.round(userDistance) + 'm'})`}
               </Text>
             </View>
 
@@ -582,44 +757,32 @@ export default function AttendanceScreen({
             </View>
           </View>
 
-          {/* Quick Simulation Buttons */}
-          <View style={{ flexDirection: 'row', gap: 6, paddingTop: 4, borderTopWidth: 1, borderTopColor: theme?.borderSubtle || '#f1f5f9' }}>
-            <TouchableOpacity
-              onPress={() => {
-                setUserCoords({ latitude: TILOK_LAT + 0.0001, longitude: TILOK_LONG - 0.00008 });
-                setUserDistance(14);
-              }}
-              style={{
-                flex: 1.2,
-                paddingVertical: 7,
-                paddingHorizontal: 6,
-                borderRadius: 8,
-                backgroundColor: userDistance !== null && userDistance <= 200 ? '#ecfdf5' : '#f8fafc',
-                borderWidth: 1,
-                borderColor: userDistance !== null && userDistance <= 200 ? '#10b981' : '#cbd5e1',
-                alignItems: 'center',
-              }}
-            >
-              <Text style={{ fontSize: 9.5, fontWeight: '800', color: userDistance !== null && userDistance <= 200 ? '#059669' : '#334155' }}>
-                🏢 Di Dalam Tilok (14m - Sah)
+          {/* Notifikasi jika Izin GPS Ditolak / Belum Diberikan */}
+          {userCoords === null && !isLocating && (
+            <View style={{ backgroundColor: '#fef2f2', padding: 10, borderRadius: 8, borderLeftWidth: 3, borderLeftColor: '#ef4444' }}>
+              <Text style={{ fontSize: 10.5, color: '#991b1b', lineHeight: 15 }}>
+                {gpsErrorMessage || 'Peta tidak memunculkan titik lokasi Anda karena izin akses GPS belum diizinkan atau dimatikan. Silakan klik tombol "Izinkan & Cek GPS" di bawah untuk memverifikasi Tilok.'}
               </Text>
-            </TouchableOpacity>
+            </View>
+          )}
 
+          {/* Quick GPS Buttons */}
+          <View style={{ flexDirection: 'row', gap: 6, paddingTop: 4, borderTopWidth: 1, borderTopColor: theme?.borderSubtle || '#f1f5f9' }}>
             <TouchableOpacity
               onPress={fetchRealLocation}
               style={{
-                flex: 1,
+                flex: 1.4,
                 paddingVertical: 7,
-                paddingHorizontal: 4,
+                paddingHorizontal: 6,
                 borderRadius: 8,
-                backgroundColor: '#f8fafc',
+                backgroundColor: userCoords === null ? '#fee2e2' : '#ecfdf5',
                 borderWidth: 1,
-                borderColor: '#cbd5e1',
+                borderColor: userCoords === null ? '#ef4444' : '#10b981',
                 alignItems: 'center',
               }}
             >
-              <Text style={{ fontSize: 9.5, fontWeight: '700', color: '#0284c7' }}>
-                📍 Kalibrasi GPS
+              <Text style={{ fontSize: 9.5, fontWeight: '800', color: userCoords === null ? '#b91c1c' : '#059669' }}>
+                {userCoords === null ? '📍 Izinkan & Cek GPS' : '📍 Perbarui GPS Asli'}
               </Text>
             </TouchableOpacity>
 
@@ -640,7 +803,7 @@ export default function AttendanceScreen({
               }}
             >
               <Text style={{ fontSize: 9.5, fontWeight: '700', color: userDistance !== null && userDistance > 200 ? '#c2410c' : '#64748b' }}>
-                🚗 Tes Luar (1.2 km)
+                🚗 Tes Luar Tilok (1.2 km)
               </Text>
             </TouchableOpacity>
           </View>
@@ -1501,6 +1664,8 @@ export default function AttendanceScreen({
             </TouchableOpacity>
           </View>
         </View>
+        </>
+        )}
 
         {/* Back to Dashboard Button */}
         <TouchableOpacity

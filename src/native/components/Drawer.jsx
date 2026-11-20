@@ -144,6 +144,17 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
               onClose();
             }}
           />
+          {(user?.roleType === 'super_admin' || user?.roleType === 'admin_umum' || user?.roleType === 'ka_instalasi' || activeScreen === 'admin') && (
+            <NavItem
+              label="👑 Dashboard Admin"
+              active={activeScreen === 'admin'}
+              theme={activeTheme}
+              onPress={() => {
+                onNavigate('admin');
+                onClose();
+              }}
+            />
+          )}
         </View>
 
         {/* Logout Button */}

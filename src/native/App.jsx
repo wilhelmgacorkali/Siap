@@ -13,6 +13,7 @@ import DashboardScreen from './screens/DashboardScreen';
 import AttendanceScreen from './screens/AttendanceScreen';
 import { ReportsScreen } from './screens/ReportsScreen';
 import PdtScreen from './screens/PdtScreen';
+import AdminScreen from './screens/AdminScreen';
 import Drawer from './components/Drawer';
 import { styles, DARK_THEME, LIGHT_THEME } from './theme';
 import { RSJ_LOGO_URI } from './assets';
@@ -28,6 +29,26 @@ const getTodayDateString = () => {
   return `${year}-${month}-${day}`;
 };
 
+const isAdminUrl = () => {
+  if (typeof window !== 'undefined' && window.location) {
+    const p = (window.location.pathname || '').toLowerCase();
+    const h = (window.location.hash || '').toLowerCase();
+    return p === '/admin' || p.startsWith('/admin') || h === '#admin' || h.startsWith('#/admin') || h.startsWith('#admin');
+  }
+  return false;
+};
+
+const DEFAULT_SUPER_ADMIN = {
+  id: 1,
+  name: 'dr. H. Haznelli, MARS',
+  nip: '19680315 199703 1 002',
+  role: 'Direktur / Super Admin SIMRS',
+  roleType: 'super_admin',
+  unit: 'Direksi & Manajemen',
+  badge: 'Super Admin',
+  status: 'Aktif',
+};
+
 const createEmptyAttendance = (dateStr = getTodayDateString()) => ({
   date: dateStr,
   sekarang: { masuk: null, pulang: null, masukScore: null, pulangScore: null, date: dateStr },
@@ -37,7 +58,7 @@ const createEmptyAttendance = (dateStr = getTodayDateString()) => ({
 
 export default function App() {
   const [user, setUser] = useState(null);
-  const [screen, setScreen] = useState('dashboard');
+  const [screen, setScreen] = useState(() => (isAdminUrl() ? 'admin' : 'dashboard'));
   const [mode, setMode] = useState('sekarang');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
@@ -163,10 +184,51 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // Handle URL navigation for web (/admin & browser back/forward)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const syncUrlScreen = () => {
+      if (isAdminUrl()) {
+        setScreen('admin');
+      } else {
+        setScreen((prev) => (prev === 'admin' ? 'dashboard' : prev));
+      }
+    };
+
+    syncUrlScreen();
+    window.addEventListener('popstate', syncUrlScreen);
+    window.addEventListener('hashchange', syncUrlScreen);
+    return () => {
+      window.removeEventListener('popstate', syncUrlScreen);
+      window.removeEventListener('hashchange', syncUrlScreen);
+    };
+  }, []);
+
   const navigate = (nextScreen, nextMode = mode) => {
     setScreen(nextScreen);
     setMode(nextMode);
     setDrawerOpen(false);
+
+    if (typeof window !== 'undefined' && window.history) {
+      if (nextScreen === 'admin') {
+        try {
+          if (window.location.pathname !== '/admin') {
+            window.history.pushState(null, '', '/admin');
+          }
+        } catch (e) {
+          window.location.hash = '/admin';
+        }
+      } else if (screen === 'admin' || window.location.pathname === '/admin' || (window.location.hash || '').includes('admin')) {
+        try {
+          if (window.location.pathname !== '/') {
+            window.history.pushState(null, '', '/');
+          }
+        } catch (e) {
+          window.location.hash = '';
+        }
+      }
+    }
   };
 
   const handleLogin = (account) => {
@@ -226,7 +288,7 @@ export default function App() {
     );
   };
 
-  const handleUpdatePdtAttendance = (type, time, scoreData) => {
+  const handleUpdatePdtAttendance = (type, time, scoreData, photo) => {
     const todayStr = getTodayDateString();
     setAttendance((prev) => {
       const nextAttendance = {
@@ -238,6 +300,18 @@ export default function App() {
           [type]: time,
           [`${type}Date`]: todayStr,
           [`${type}Score`]: scoreData,
+          [`${type}Photo`]: photo,
+        },
+        // Ketentuan RSJ Tampan: Jika Masuk via PDT, tercatat juga di Presensi Biasa
+        // sehingga saat pulang kerja, pegawai cukup melakukan Absen Pulang biasa!
+        sekarang: {
+          ...prev.sekarang,
+          date: todayStr,
+          masuk: prev.sekarang?.masuk || time,
+          masukDate: prev.sekarang?.masukDate || todayStr,
+          masukScore: prev.sekarang?.masukScore || scoreData,
+          masukPhoto: prev.sekarang?.masukPhoto || photo,
+          isPdtMasuk: true,
         },
       };
       storageService.saveAttendance(nextAttendance);
@@ -264,7 +338,18 @@ export default function App() {
     });
   };
 
-  if (!user) {
+  const handleSwitchUser = async (targetUser) => {
+    setUser(targetUser);
+    await storageService.saveUser(targetUser);
+    Alert.alert(
+      'Beralih Akun Berhasil',
+      `Sekarang Anda aktif sebagai ${targetUser.name} (${targetUser.role || targetUser.roleType || 'Pegawai'}).`
+    );
+  };
+
+  const effectiveUser = user || (screen === 'admin' ? DEFAULT_SUPER_ADMIN : null);
+
+  if (!effectiveUser && screen !== 'admin') {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
@@ -274,6 +359,7 @@ export default function App() {
     }
     if (screen === 'rekap') return 'Rekap Absensi';
     if (screen === 'pdt') return 'Pegawai Presensi PDT';
+    if (screen === 'admin') return 'Dashboard Admin';
     return 'SIAP RSJ Tampan';
   };
 
@@ -305,9 +391,11 @@ export default function App() {
               <TouchableOpacity
                 style={styles.backButton}
                 activeOpacity={0.7}
-                onPress={() => setScreen('dashboard')}
+                onPress={() => navigate('dashboard')}
               >
-                <Text style={styles.backText}>← Beranda</Text>
+                <Text style={styles.backText}>
+                  {screen === 'admin' ? '← Portal Pegawai (/)' : '← Beranda'}
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -405,7 +493,21 @@ export default function App() {
               isDarkMode={isDarkMode}
               theme={theme}
               onUpdatePdtAttendance={handleUpdatePdtAttendance}
+              onNavigate={navigate}
               onBack={() => setScreen('dashboard')}
+            />
+          )}
+
+          {screen === 'admin' && (
+            <AdminScreen
+              user={effectiveUser}
+              currentTime={currentTime}
+              attendance={attendance}
+              onSwitchUser={handleSwitchUser}
+              onNavigate={navigate}
+              onBack={() => navigate('dashboard')}
+              isDarkMode={isDarkMode}
+              theme={theme}
             />
           )}
         </View>
@@ -414,7 +516,7 @@ export default function App() {
         <Drawer
           open={drawerOpen}
           activeScreen={activeNavKey}
-          user={user}
+          user={effectiveUser}
           isDarkMode={isDarkMode}
           theme={theme}
           onClose={() => setDrawerOpen(false)}

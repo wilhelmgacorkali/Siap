@@ -21,21 +21,35 @@ export default function LoginScreen({ onLogin }) {
   const demoAccounts = [
     {
       name: 'Ners. Fitri Rahmadani, S.Kep',
-      role: 'Perawat Pelaksana - Shift Sore',
+      role: 'Perawat Pelaksana (Pegawai)',
       badge: 'Ners Rawat Inap',
       nip: '19890412 201402 2 003',
+      roleType: 'pegawai',
+      desc: 'Presensi Harian & Ajukan PDT',
     },
     {
-      name: 'dr. Hendra Saputra, Sp.KJ',
-      role: 'Dokter Spesialis Jiwa - Jaga IGD',
-      badge: 'Dokter Jaga',
-      nip: '19780516 200501 1 004',
+      name: 'Ns. Bambang Irawan, S.Kep',
+      role: 'Kepala Instalasi / Katim',
+      badge: 'Ka. Instalasi',
+      nip: '19820315 200801 1 002',
+      roleType: 'kainstalasi',
+      desc: 'Menentukan Jadwal Dinas & Dording',
+    },
+    {
+      name: 'Hj. Erlina Sari, S.Sos',
+      role: 'Admin Umum (Kepegawaian)',
+      badge: 'Admin Umum',
+      nip: '19850620 201001 2 005',
+      roleType: 'admin_umum',
+      desc: 'Persetujuan / Approve PDT',
     },
     {
       name: 'Ahmad Fauzan, S.Kom',
-      role: 'Superadmin SIMRS & Kepegawaian',
-      badge: 'Admin SIMRS',
+      role: 'Super Admin (SIMRS)',
+      badge: 'Super Admin',
       nip: '19920101 201801 1 001',
+      roleType: 'superadmin',
+      desc: 'Kelola Master Sistem, Jam Absen & Tilok',
     },
   ];
 
@@ -47,9 +61,10 @@ export default function LoginScreen({ onLogin }) {
   const handleManualLogin = () => {
     onLogin({
       name: username || 'Ners. Fitri Rahmadani, S.Kep',
-      role: 'Perawat Pelaksana - Shift Sore',
+      role: 'Perawat Pelaksana (Pegawai)',
       badge: 'Ners Rawat Inap',
       nip: '19890412 201402 2 003',
+      roleType: 'pegawai',
     });
   };
 
@@ -157,6 +172,11 @@ export default function LoginScreen({ onLogin }) {
                     <Text style={{ fontSize: 10, color: '#0284c7', fontWeight: '700' }}>
                       {account.role}
                     </Text>
+                    {account.desc && (
+                      <Text style={{ fontSize: 9, color: '#64748b', marginTop: 1 }}>
+                        • {account.desc}
+                      </Text>
+                    )}
                   </View>
                   <View
                     style={{

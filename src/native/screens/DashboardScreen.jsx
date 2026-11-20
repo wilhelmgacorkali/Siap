@@ -306,14 +306,21 @@ export default function DashboardScreen({
               },
             ]}
           >
-            <Text
-              style={[
-                styles.calendarCardTitle,
-                { color: theme.jadwalDinasHeaderText },
-              ]}
-            >
-              Jadwal Dinas
-            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text
+                style={[
+                  styles.calendarCardTitle,
+                  { color: theme.jadwalDinasHeaderText },
+                ]}
+              >
+                Jadwal Dinas
+              </Text>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                <Text style={{ color: theme.jadwalDinasHeaderText, fontSize: 10, fontWeight: '700' }}>
+                  Ditetapkan: Ka. Instalasi / Katim
+                </Text>
+              </View>
+            </View>
           </View>
 
           {/* Card Body */}
@@ -419,14 +426,21 @@ export default function DashboardScreen({
               },
             ]}
           >
-            <Text
-              style={[
-                styles.calendarCardTitle,
-                { color: theme.jadwalDordingHeaderText },
-              ]}
-            >
-              Jadwal Dording (Dinas Tambahan)
-            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text
+                style={[
+                  styles.calendarCardTitle,
+                  { color: theme.jadwalDordingHeaderText },
+                ]}
+              >
+                Jadwal Dording (Dinas Tambahan)
+              </Text>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                <Text style={{ color: theme.jadwalDordingHeaderText, fontSize: 10, fontWeight: '700' }}>
+                  Penugasan: Ka. Instalasi
+                </Text>
+              </View>
+            </View>
           </View>
 
           {/* Card Body */}

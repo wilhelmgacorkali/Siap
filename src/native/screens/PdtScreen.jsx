@@ -553,7 +553,7 @@ export default function PdtScreen({
 
             {/* Tombol Absen Masuk (Hijau) & Absen Pulang (Kuning) Sesuai Screenshot 1 */}
             <View style={styles.actionsRow}>
-              {/* Absen Masuk */}
+              {/* Absen Masuk PDT */}
               <View style={{ flex: 1 }}>
                 <TouchableOpacity
                   style={[
@@ -564,7 +564,7 @@ export default function PdtScreen({
                   disabled={!!pdtData.masuk}
                   onPress={() => handleOpenAbsen('masuk')}
                 >
-                  <Text style={styles.btnActionText}>Absen Masuk</Text>
+                  <Text style={styles.btnActionText}>Absen Masuk PDT</Text>
                 </TouchableOpacity>
 
                 {/* Status Box Bawah Tombol */}
@@ -584,36 +584,52 @@ export default function PdtScreen({
                 </View>
               </View>
 
-              {/* Absen Pulang */}
-              <View style={{ flex: 1 }}>
+              {/* Absen Pulang - Menggunakan Presensi Biasa Sesuai Ketentuan RSJ Tampan */}
+              <View style={{ flex: 1.1 }}>
                 <TouchableOpacity
                   style={[
                     styles.pdtActionButton,
-                    styles.btnPulangYellow,
-                    pdtData.pulang && styles.btnDisabled,
+                    { backgroundColor: '#0284c7' },
                   ]}
-                  disabled={!!pdtData.pulang}
-                  onPress={() => handleOpenAbsen('pulang')}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    if (onNavigate) {
+                      onNavigate('presensi', 'sekarang');
+                    } else if (onBack) {
+                      onBack();
+                    }
+                  }}
                 >
-                  <Text style={styles.btnActionText}>Absen Pulang</Text>
+                  <Text style={styles.btnActionText}>Absen Pulang Biasa</Text>
                 </TouchableOpacity>
 
                 {/* Status Box Bawah Tombol */}
                 <View style={styles.indicatorBox}>
-                  {pdtData.pulang ? (
+                  {attendance?.sekarang?.pulang ? (
                     <View style={{ alignItems: 'center' }}>
                       <Text style={styles.indicatorStatusDone}>
-                        Jam: {pdtData.pulang}
+                        Jam: {attendance.sekarang.pulang}
                       </Text>
-                      <Text style={{ fontSize: 9.5, color: '#b45309', fontWeight: '700' }}>
-                        Tercatat (PDT 100%)
+                      <Text style={{ fontSize: 9.5, color: '#047857', fontWeight: '700' }}>
+                        Pulang Tercatat (100%)
                       </Text>
                     </View>
                   ) : (
-                    <Text style={styles.indicatorPlaceholder}>XX 0%</Text>
+                    <View style={{ alignItems: 'center', paddingHorizontal: 4 }}>
+                      <Text style={{ fontSize: 9.5, color: '#0369a1', fontWeight: '700', textAlign: 'center' }}>
+                        Pakai Absen Biasa (16:00)
+                      </Text>
+                    </View>
                   )}
                 </View>
               </View>
+            </View>
+
+            {/* Banner Penjelasan SOP Pulang PDT */}
+            <View style={{ marginTop: 10, padding: 8, borderRadius: 8, backgroundColor: '#f0f9ff', borderWidth: 1, borderColor: '#bae6fd' }}>
+              <Text style={{ fontSize: 10, color: '#0369a1', lineHeight: 14 }}>
+                ℹ️ <Text style={{ fontWeight: '800' }}>Ketentuan PDT RSJ Tampan:</Text> Presensi Diluar Tilok (PDT) digunakan untuk absensi masuk saat dinas luar. Untuk kepulangan, pegawai menggunakan menu <Text style={{ fontWeight: '800' }}>Presensi Biasa</Text>.
+              </Text>
             </View>
           </View>
 

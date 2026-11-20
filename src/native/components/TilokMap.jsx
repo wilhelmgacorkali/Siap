@@ -11,18 +11,29 @@ export default function TilokMap({
   locationName = 'RS Jiwa Tampan - Pekanbaru',
   height = 210,
   showControls = true,
+  cleanMode = false,
 }) {
   const [currentRadius, setCurrentRadius] = useState(radius);
   const [mapZoom, setMapZoom] = useState(isOutsideRadius ? 15 : 16);
 
-  // Tentukan posisi user (apakah di dalam radius atau di luar radius)
-  const actualUserDistance = typeof userDistance === 'number' ? userDistance : 14;
-  const userLat = customUserPos ? customUserPos[0] : (isOutsideRadius ? latitude + 0.0075 : latitude + 0.0001);
-  const userLng = customUserPos ? customUserPos[1] : (isOutsideRadius ? longitude + 0.0065 : longitude - 0.00008);
+  // Periksa apakah posisi user terdeteksi sah dari GPS (tidak memalsukan ke RSJ Tampan jika izin ditolak)
+  const hasUserLocation = Boolean(
+    customUserPos &&
+    typeof customUserPos[0] === 'number' &&
+    typeof customUserPos[1] === 'number' &&
+    !isNaN(customUserPos[0]) &&
+    !isNaN(customUserPos[1])
+  );
 
-  const formattedDistance = actualUserDistance >= 1000
-    ? `${(actualUserDistance / 1000).toFixed(1)} km`
-    : `${Math.round(actualUserDistance)} meter`;
+  const actualUserDistance = typeof userDistance === 'number' ? userDistance : null;
+  const userLat = hasUserLocation ? customUserPos[0] : null;
+  const userLng = hasUserLocation ? customUserPos[1] : null;
+
+  const formattedDistance = actualUserDistance !== null
+    ? (actualUserDistance >= 1000
+        ? `${(actualUserDistance / 1000).toFixed(1)} km`
+        : `${Math.round(actualUserDistance)} meter`)
+    : 'Belum Terdeteksi';
 
   // Generate self-contained Leaflet HTML with OpenStreetMap tiles & exact geofence circle
   const leafletHtml = `
@@ -78,7 +89,7 @@ export default function TilokMap({
   <div id="map"></div>
   <script>
     const center = [${latitude}, ${longitude}];
-    const userPos = [${userLat}, ${userLng}];
+    const hasUserPos = ${hasUserLocation ? 'true' : 'false'};
     const map = L.map('map', {
       center: center,
       zoom: ${mapZoom},
@@ -96,48 +107,77 @@ export default function TilokMap({
     const radiusCircle = L.circle(center, {
       color: '#e11d48',
       fillColor: '#f43f5e',
-      fillOpacity: 0.28,
-      weight: 2.5,
+      fillOpacity: 0.22,
+      weight: 2,
       radius: ${currentRadius}
     }).addTo(map);
 
-    // Titik Lokasi Resmi (Tilok) RS Jiwa Tampan
-    const tilokMarker = L.marker(center).addTo(map);
-    tilokMarker.bindPopup("<b>RS Jiwa Tampan</b><br>Titik Lokasi (Tilok) Valid<br>Radius: ${currentRadius} meter").openPopup();
-
-    // User GPS Location Marker
-    const userIcon = L.divIcon({
-      className: 'user-marker-wrap',
-      html: '<div class="pulse-dot"></div>',
-      iconSize: [14, 14],
-      iconAnchor: [7, 7]
-    });
-    const userMarker = L.marker(userPos, { icon: userIcon }).addTo(map);
-    userMarker.bindTooltip("Posisi Anda (${formattedDistance}${isOutsideRadius ? ' - Di Luar Radius' : ' - Dalam Tilok'})", {
-      permanent: true,
-      direction: 'top',
-      className: 'custom-label'
-    });
-
-    ${isOutsideRadius ? `
-    // Garis penghubung ke Tilok jika di luar radius
-    const polyline = L.polyline([center, userPos], {
-      color: '#ea580c',
+    // Titik Tilok Panam RS Jiwa Tampan (Red Dot Marker dengan Border Putih seperti Foto Resmi)
+    const tilokDot = L.circleMarker(center, {
+      radius: 7,
+      fillColor: '#dc2626',
+      color: '#ffffff',
       weight: 2.5,
-      dashArray: '6, 6',
-      opacity: 0.85
+      opacity: 1,
+      fillOpacity: 1
     }).addTo(map);
 
-    // Otomatis sesuaikan viewport peta agar lingkaran Tilok dan posisi pengguna terlihat bersamaan
-    try {
-      const bounds = L.latLngBounds([center, userPos]);
-      map.fitBounds(bounds, { padding: [35, 35], maxZoom: 16 });
-    } catch(e) {}
-    ` : ''}
+    if (hasUserPos) {
+      const userPos = [${userLat || 0}, ${userLng || 0}];
+      // Leaflet Blue Pin Marker untuk Posisi Pengguna (Sesuai Foto Sistem)
+      const userMarker = L.marker(userPos).addTo(map);
+      userMarker.bindTooltip("Posisi Anda (${formattedDistance})", {
+        permanent: false,
+        direction: 'top'
+      });
+
+      // Sesuaikan Viewport Peta agar Tilok (Panam) dan Posisi Pengguna terlihat jelas
+      try {
+        const bounds = L.latLngBounds([center, userPos]);
+        map.fitBounds(bounds, { padding: [35, 35], maxZoom: 15 });
+      } catch(e) {}
+    } else {
+      // Jika GPS belum aktif, fokus ke area Pekanbaru (Tampan, Panam)
+      map.setView(center, 13);
+    }
   </script>
 </body>
 </html>
   `.trim();
+
+  if (cleanMode) {
+    return (
+      <View
+        style={{
+          width: '100%',
+          height,
+          borderRadius: 8,
+          overflow: 'hidden',
+          borderWidth: 1,
+          borderColor: '#e2e8f0',
+          backgroundColor: '#f1f5f9',
+        }}
+      >
+        {Platform.OS === 'web' ? (
+          <iframe
+            key={`map-clean-${currentRadius}-${mapZoom}-${isOutsideRadius}-${actualUserDistance}-${userLat}-${userLng}`}
+            title="Peta Tilok RSJ Tampan"
+            srcDoc={leafletHtml}
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none',
+            }}
+          />
+        ) : (
+          <View style={mapStyles.fallbackMap}>
+            <Text style={mapStyles.fallbackText}>Peta Tilok RSJ Tampan</Text>
+            <Text style={mapStyles.fallbackSub}>Koordinat: {latitude}° N, {longitude}° E</Text>
+          </View>
+        )}
+      </View>
+    );
+  }
 
   return (
     <View style={mapStyles.container}>
