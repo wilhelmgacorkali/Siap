@@ -171,9 +171,6 @@ export default function DashboardScreen({
           </TouchableOpacity>
         </View>
 
-        {/* ================================================================= */}
-        {/* 2. WELCOME GREETING & LIVE DIGITAL CLOCK (Matching Screenshot 3)   */}
-        {/* ================================================================= */}
         <View
           style={[
             styles.welcomeBanner,
