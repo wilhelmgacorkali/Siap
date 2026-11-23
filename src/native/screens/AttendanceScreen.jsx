@@ -353,7 +353,7 @@ export default function AttendanceScreen({
             Pegawai Absensi
           </Text>
           <Text style={{ fontSize: 12, color: theme?.textMuted || '#64748b', marginTop: 3 }}>
-            <Text style={{ color: '#0284c7', fontWeight: '600' }}>Home</Text> / Pegawai Absensi
+            <Text style={{ color: '#1565c0', fontWeight: '600' }}>Beranda</Text> / Pegawai Absensi
           </Text>
         </View>
 

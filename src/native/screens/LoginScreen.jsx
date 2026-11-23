@@ -140,7 +140,7 @@ export default function LoginScreen({ onLogin }) {
                 style={styles.eyeButton}
                 onPress={() => setShowPassword(!showPassword)}
               >
-                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#0284c7' }}>
+                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#1565c0' }}>
                   {showPassword ? 'Sembunyikan' : 'Lihat'}
                 </Text>
               </TouchableOpacity>
@@ -169,7 +169,7 @@ export default function LoginScreen({ onLogin }) {
                     <Text style={{ fontSize: 12, fontWeight: '800', color: '#0f172a' }}>
                       {account.name}
                     </Text>
-                    <Text style={{ fontSize: 10, color: '#0284c7', fontWeight: '700' }}>
+                    <Text style={{ fontSize: 10, color: '#1565c0', fontWeight: '700' }}>
                       {account.role}
                     </Text>
                     {account.desc && (
@@ -180,13 +180,13 @@ export default function LoginScreen({ onLogin }) {
                   </View>
                   <View
                     style={{
-                      backgroundColor: '#e0f2fe',
+                      backgroundColor: '#e3f2fd',
                       paddingHorizontal: 7,
                       paddingVertical: 3,
                       borderRadius: 6,
                     }}
                   >
-                    <Text style={{ fontSize: 9.5, fontWeight: '800', color: '#0369a1' }}>
+                    <Text style={{ fontSize: 9.5, fontWeight: '800', color: '#1565c0' }}>
                       Pilih
                     </Text>
                   </View>

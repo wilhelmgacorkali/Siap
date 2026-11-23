@@ -18,7 +18,6 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
 
   return (
     <>
-      {/* Backdrop overlay */}
       {open && (
         <TouchableOpacity
           style={[styles.drawerBackdrop, { backgroundColor: activeTheme.overlay }]}
@@ -27,7 +26,6 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
         />
       )}
 
-      {/* Drawer Container */}
       <Animated.View
         pointerEvents={open ? 'auto' : 'none'}
         style={[
@@ -39,14 +37,13 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
           { transform: [{ translateX: slideAnim }] },
         ]}
       >
-        {/* Drawer Header */}
         <View style={[styles.drawerHeader, { borderBottomColor: activeTheme.borderSubtle }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: 10,
+                width: 40,
+                height: 40,
+                borderRadius: 12,
                 backgroundColor: '#ffffff',
                 justifyContent: 'center',
                 alignItems: 'center',
@@ -62,8 +59,8 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
             </View>
             <View>
               <Text style={[styles.drawerLogo, { color: activeTheme.drawerText }]}>SIAP RSJ Tampan</Text>
-              <Text style={{ color: activeTheme.drawerTextSub, fontSize: 10, fontWeight: '700' }}>
-                Provinsi Riau - Mobile System
+              <Text style={{ color: activeTheme.drawerTextSub, fontSize: 10, fontWeight: '600', letterSpacing: 0.3 }}>
+                Provinsi Riau
               </Text>
             </View>
           </View>
@@ -76,7 +73,6 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
           </TouchableOpacity>
         </View>
 
-        {/* User Profile Card */}
         <View
           style={[
             styles.drawerUser,
@@ -97,73 +93,26 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
           </Text>
         </View>
 
-        {/* Navigation Items */}
         <View style={{ flex: 1 }}>
-          <NavItem
-            label="Beranda"
-            active={activeScreen === 'dashboard'}
-            theme={activeTheme}
-            onPress={() => {
-              onNavigate('dashboard');
-              onClose();
-            }}
-          />
-          <NavItem
-            label="Presensi Sekarang"
-            active={activeScreen === 'presensi_sekarang'}
-            theme={activeTheme}
-            onPress={() => {
-              onNavigate('presensi', 'sekarang');
-              onClose();
-            }}
-          />
-          <NavItem
-            label="Presensi Dording"
-            active={activeScreen === 'presensi_dording'}
-            theme={activeTheme}
-            onPress={() => {
-              onNavigate('presensi', 'dording');
-              onClose();
-            }}
-          />
-          <NavItem
-            label="Rekap Absensi"
-            active={activeScreen === 'rekap'}
-            theme={activeTheme}
-            onPress={() => {
-              onNavigate('rekap');
-              onClose();
-            }}
-          />
-          <NavItem
-            label="Presensi Luar Tilok (PDT)"
-            active={activeScreen === 'pdt'}
-            theme={activeTheme}
-            onPress={() => {
-              onNavigate('pdt');
-              onClose();
-            }}
-          />
+          <NavItem label="Beranda" active={activeScreen === 'dashboard'} theme={activeTheme}
+            onPress={() => { onNavigate('dashboard'); onClose(); }} />
+          <NavItem label="Presensi Sekarang" active={activeScreen === 'presensi_sekarang'} theme={activeTheme}
+            onPress={() => { onNavigate('presensi', 'sekarang'); onClose(); }} />
+          <NavItem label="Rekap Absensi" active={activeScreen === 'rekap'} theme={activeTheme}
+            onPress={() => { onNavigate('rekap'); onClose(); }} />
+          <NavItem label="Presensi Luar Tilok (PDT)" active={activeScreen === 'pdt'} theme={activeTheme}
+            onPress={() => { onNavigate('pdt'); onClose(); }} />
+          <NavItem label="Presensi Dording" active={activeScreen === 'presensi_dording'} theme={activeTheme}
+            onPress={() => { onNavigate('presensi', 'dording'); onClose(); }} />
           {(user?.roleType === 'super_admin' || user?.roleType === 'admin_umum' || user?.roleType === 'ka_instalasi' || activeScreen === 'admin') && (
-            <NavItem
-              label="👑 Dashboard Admin"
-              active={activeScreen === 'admin'}
-              theme={activeTheme}
-              onPress={() => {
-                onNavigate('admin');
-                onClose();
-              }}
-            />
+            <NavItem label="👑 Panel Admin & Kendali" active={activeScreen === 'admin'} theme={activeTheme} isAdmin={true}
+              onPress={() => { onNavigate('admin'); onClose(); }} />
           )}
         </View>
 
-        {/* Logout Button */}
         <TouchableOpacity
           style={styles.logout}
-          onPress={() => {
-            onLogout();
-            onClose();
-          }}
+          onPress={() => { onLogout(); onClose(); }}
         >
           <Text style={styles.logoutText}>Keluar dari Akun</Text>
         </TouchableOpacity>
@@ -172,14 +121,12 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
   );
 }
 
-function NavItem({ label, active, theme, onPress }) {
+function NavItem({ label, active, theme, onPress, isAdmin = false }) {
   return (
     <TouchableOpacity
       style={[
         styles.navItem,
-        active
-          ? styles.navItemActive
-          : { backgroundColor: 'transparent' },
+        active ? styles.navItemActive : { backgroundColor: 'transparent' },
       ]}
       onPress={onPress}
     >
@@ -187,9 +134,8 @@ function NavItem({ label, active, theme, onPress }) {
         style={[
           styles.navText,
           {
-            color: active
-              ? '#ffffff'
-              : theme?.drawerText || '#0f172a',
+            color: active ? '#ffffff' : isAdmin ? (theme?.accent || '#4fc3f7') : theme?.drawerText || '#1a2332',
+            fontWeight: active || isAdmin ? '800' : '700',
           },
         ]}
       >

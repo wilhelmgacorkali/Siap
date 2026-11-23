@@ -147,7 +147,7 @@ export default function DashboardScreen({
           <View>
             <Text style={[styles.mainHeading, { color: theme.textMain }]}>Beranda</Text>
             <View style={styles.breadcrumbRow}>
-              <Text style={[styles.breadcrumbHome, { color: theme.breadcrumbHome }]}>Home</Text>
+              <Text style={[styles.breadcrumbHome, { color: theme.breadcrumbHome }]}>Beranda</Text>
               <Text style={[styles.breadcrumbSlash, { color: theme.textMuted }]}> / </Text>
               <Text style={[styles.breadcrumbActive, { color: theme.textSub }]}>Beranda</Text>
             </View>
@@ -166,7 +166,7 @@ export default function DashboardScreen({
             ]}
           >
             <Text style={[styles.themeToggleText, { color: theme.textMain }]}>
-              {activeDarkMode ? 'Tema Gelap' : 'Tema Terang'}
+              {activeDarkMode ? 'Mode Gelap' : 'Mode Terang'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -184,7 +184,7 @@ export default function DashboardScreen({
           ]}
         >
           <View style={styles.welcomeLeft}>
-            <Text style={[styles.welcomeGreeting, { color: theme.textSub }]}>Welcome!,</Text>
+            <Text style={[styles.welcomeGreeting, { color: theme.textSub }]}>Selamat Datang,</Text>
             <Text style={[styles.welcomeUserName, { color: theme.textMain }]}>
               {user?.name || 'YANTINI MANIK'} , {user?.badge || 'AMR'}
             </Text>
@@ -203,7 +203,7 @@ export default function DashboardScreen({
           {/* Card 1: Presensi Sekarang (Biru) */}
           <TouchableOpacity
             activeOpacity={0.85}
-            style={[styles.actionCard, { backgroundColor: '#0284c7' }]}
+            style={[styles.actionCard, { backgroundColor: '#1565c0' }]}
             onPress={() => onNavigate('presensi', 'sekarang')}
           >
             <View style={styles.actionCardContent}>
@@ -224,7 +224,7 @@ export default function DashboardScreen({
           {/* Card 2: Rekap Absensi (Merah) */}
           <TouchableOpacity
             activeOpacity={0.85}
-            style={[styles.actionCard, { backgroundColor: '#dc2626' }]}
+            style={[styles.actionCard, { backgroundColor: '#c62828' }]}
             onPress={() => onNavigate('rekap')}
           >
             <View style={styles.actionCardContent}>
@@ -243,7 +243,7 @@ export default function DashboardScreen({
           {/* Card 3: Presensi Diluar Tilok (PDT) (Dark Slate) */}
           <TouchableOpacity
             activeOpacity={0.85}
-            style={[styles.actionCard, { backgroundColor: '#334155' }]}
+            style={[styles.actionCard, { backgroundColor: '#283747' }]}
             onPress={() => onNavigate('pdt')}
           >
             <View style={styles.actionCardContent}>
@@ -262,20 +262,39 @@ export default function DashboardScreen({
           {/* Card 4: Presensi Dording (Kuning / Amber Gold) */}
           <TouchableOpacity
             activeOpacity={0.85}
-            style={[styles.actionCard, { backgroundColor: '#f59e0b' }]}
+            style={[styles.actionCard, { backgroundColor: '#ef8c00' }]}
             onPress={() => onNavigate('presensi', 'dording')}
           >
             <View style={styles.actionCardContent}>
               <View style={styles.actionCardTitleRow}>
-                <Text style={styles.actionCardTitleDark}>Presensi Dording</Text>
+                <Text style={styles.actionCardTitleWhite}>Presensi Dording</Text>
               </View>
-              <Text style={styles.actionCardSubtitleDark}>
+              <Text style={styles.actionCardSubtitleWhite}>
                 Gunakan fitur ini untuk melakukan presensi dording.
               </Text>
-              <View style={styles.actionCardBadgeDark}>
-                <Text style={styles.actionCardBadgeTextDark}>
+              <View style={styles.actionCardBadge}>
+                <Text style={styles.actionCardBadgeText}>
                   {dordingAttendance?.masuk ? `Masuk: ${dordingAttendance.masuk}` : 'Dinas Sambung (Shift 2)'}
                 </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          {/* Card 5: Panel Admin & Kendali (Ungu Elegan) */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={[styles.actionCard, { backgroundColor: '#6366f1' }]}
+            onPress={() => onNavigate('admin')}
+          >
+            <View style={styles.actionCardContent}>
+              <View style={styles.actionCardTitleRow}>
+                <Text style={styles.actionCardTitleWhite}>👑 Panel Admin & Kendali</Text>
+              </View>
+              <Text style={styles.actionCardSubtitleWhite}>
+                Kelola approval PDT, atur jadwal dinas & dording, geofence, serta master pegawai.
+              </Text>
+              <View style={styles.actionCardBadge}>
+                <Text style={styles.actionCardBadgeText}>Akses Penuh Super Admin / Katim / Admin</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -510,11 +529,11 @@ export default function DashboardScreen({
         {/* ================================================================= */}
         <View style={[styles.footerContainer, { borderTopColor: theme.footerBorder }]}>
           <Text style={[styles.footerText, { color: theme.footerText }]}>
-            Copyright © 2025{' '}
+            © 2025{' '}
             <Text style={{ fontWeight: '800', color: theme.accent }}>
               SIAP - Sistem Absensi Pegawai
             </Text>
-            . All rights reserved.
+            . Hak Cipta Dilindungi.
           </Text>
           <View style={styles.footerLinkRow}>
             <Text style={[styles.footerSubText, { color: theme.textMuted }]}>
@@ -706,7 +725,7 @@ const styles = StyleSheet.create({
   },
 
   welcomeBanner: {
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 18,
     marginBottom: 20,
     borderWidth: 1,
@@ -736,7 +755,7 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   actionCard: {
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
     ...(Platform.OS === 'web'
       ? {
@@ -807,7 +826,7 @@ const styles = StyleSheet.create({
   },
 
   calendarCard: {
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 22,
