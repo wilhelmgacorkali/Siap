@@ -279,25 +279,6 @@ export default function DashboardScreen({
               </View>
             </View>
           </TouchableOpacity>
-
-          {/* Card 5: Panel Admin & Kendali (Ungu Elegan) */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={[styles.actionCard, { backgroundColor: '#6366f1' }]}
-            onPress={() => onNavigate('admin')}
-          >
-            <View style={styles.actionCardContent}>
-              <View style={styles.actionCardTitleRow}>
-                <Text style={styles.actionCardTitleWhite}>👑 Panel Admin & Kendali</Text>
-              </View>
-              <Text style={styles.actionCardSubtitleWhite}>
-                Kelola approval PDT, atur jadwal dinas & dording, geofence, serta master pegawai.
-              </Text>
-              <View style={styles.actionCardBadge}>
-                <Text style={styles.actionCardBadgeText}>Akses Penuh Super Admin / Katim / Admin</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
         </View>
 
         {/* ================================================================= */}
