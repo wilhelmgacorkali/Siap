@@ -15,6 +15,7 @@ import { ReportsScreen } from './screens/ReportsScreen';
 import PdtScreen from './screens/PdtScreen';
 import AdminScreen from './screens/AdminScreen';
 import Drawer from './components/Drawer';
+import BottomNav from './components/BottomNav';
 import { styles, DARK_THEME, LIGHT_THEME } from './theme';
 import { RSJ_LOGO_URI } from './assets';
 
@@ -447,6 +448,7 @@ export default function App() {
               onNavigate={navigate}
               isDarkMode={isDarkMode}
               onToggleDarkMode={handleToggleDarkMode}
+              onOpenDrawer={() => setDrawerOpen(true)}
             />
           )}
 
@@ -511,6 +513,14 @@ export default function App() {
             />
           )}
         </View>
+
+        {/* Modern Mobile Bottom Navigation Bar */}
+        <BottomNav
+          activeScreen={screen}
+          onNavigate={navigate}
+          user={effectiveUser}
+          theme={theme}
+        />
 
         {/* Sliding Navigation Drawer */}
         <Drawer

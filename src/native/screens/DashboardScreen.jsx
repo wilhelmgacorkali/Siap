@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Modal,
   Platform,
@@ -7,69 +7,74 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Image,
 } from 'react-native';
 
 import { DARK_THEME, LIGHT_THEME } from '../theme';
+import { RSJ_LOGO_URI } from '../assets';
+import {
+  IconClock,
+  IconCheckCircle,
+  IconAlertCircle,
+  IconBriefcase,
+  IconLayers,
+  IconHistory,
+  IconChevronRight,
+  IconMapPin,
+  IconSun,
+  IconMoon,
+  IconMenu,
+} from '../components/Icons';
 
 const SHIFT_TYPES = {
-  P: { code: 'P', label: 'Shift Pagi', time: '07:00 - 16:00', color: '#16a34a', bg: '#ecfdf5', desc: 'Masuk: 07:00 - 08:00 | Pulang: 14:00 - 16:00' },
+  P: { code: 'P', label: 'Shift Pagi', time: '07:00 - 16:00', color: '#059669', bg: '#ecfdf5', desc: 'Masuk: 07:00 - 08:00 | Pulang: 14:00 - 16:00' },
   S: { code: 'S', label: 'Shift Sore', time: '13:00 - 21:00', color: '#0284c7', bg: '#e0f2fe', desc: 'Presensi Masuk s/d 14:00 | Pulang: 20:00 - 21:00' },
   M: { code: 'M', label: 'Shift Malam', time: '20:30 - 07:30', color: '#7c3aed', bg: '#f3e8ff', desc: 'Jaga Malam Rawat Inap RSJ Tampan' },
   D: { code: 'D', label: 'Shift Dording', time: '13:00 - 21:00', color: '#d97706', bg: '#fef3c7', desc: 'Dinas Sambung Berkelanjutan (Shift 2)' },
   DM: { code: 'DM', label: 'Dording Malam', time: '19:30 - 08:00', color: '#ea580c', bg: '#ffedd5', desc: 'Dinas Sambung Malam Perawatan' },
-  C: { code: 'C', label: 'Cuti Resmi', time: 'Cuti Tahunan / Sakit', color: '#343a40', bg: '#f1f5f9', desc: 'Izin Cuti Terdaftar di SIMRS' },
-  L: { code: 'L', label: 'Libur / Off', time: 'Bebas Tugas', color: '#6c757d', bg: '#f8fafc', desc: 'Hari Bebas Dinas Roster' },
+  C: { code: 'C', label: 'Cuti Resmi', time: 'Cuti Tahunan / Sakit', color: '#475569', bg: '#f1f5f9', desc: 'Izin Cuti Terdaftar di SIMRS' },
+  L: { code: 'L', label: 'Libur / Off', time: 'Bebas Tugas', color: '#94a3b8', bg: '#f8fafc', desc: 'Hari Bebas Dinas Roster' },
 };
 
 const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 const DAY_FULL_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-const MONTHS_FULL_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+const MONTHS_FULL_ID = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
 
 /**
- * Menghasilkan Jadwal Dinas otomatis mengikuti kalender asli bulan & tahun berjalan:
- * - Hari Minggu & Sabtu: Libur rutin (L)
- * - Hari Kerja (Senin - Jumat): Shift Pagi (P) 07:00 - 16:00
- * - Terdapat variasi dinas realistis (C = Cuti, S = Sore)
+ * Menghasilkan Jadwal Dinas otomatis
  */
 const generateMonthlyJadwalDinas = (year, monthIndex, totalDays) => {
   const schedule = {};
   for (let d = 1; d <= totalDays; d++) {
     const date = new Date(year, monthIndex, d);
-    const dayOfWeek = date.getDay(); // 0 = Minggu, 6 = Sabtu
-
+    const dayOfWeek = date.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) {
-      schedule[d] = 'L'; // Libur rutin akhir pekan
+      schedule[d] = 'L';
     } else {
-      // Hari kerja Senin s/d Jumat
-      if (d === 6) {
-        schedule[d] = 'C'; // Cuti tahunan terdaftar
-      } else if (d === 19) {
-        schedule[d] = 'S'; // Shift Sore
-      } else {
-        schedule[d] = 'P'; // Shift Pagi Reguler
-      }
+      if (d === 6) schedule[d] = 'C';
+      else if (d === 19) schedule[d] = 'S';
+      else schedule[d] = 'P';
     }
   }
   return schedule;
 };
 
 /**
- * Menghasilkan Jadwal Dording (Dinas Sambung) mengikuti kalender asli bulan & tahun berjalan:
- * - Hari Libur / Akhir Pekan: (-) Bebas dording
- * - Hari kerja terjadwal: (D) Dinas Tambahan Rawat Inap RSJ Tampan
+ * Menghasilkan Jadwal Dording (Dinas Tambahan)
  */
 const generateMonthlyJadwalDording = (year, monthIndex, totalDays) => {
   const schedule = {};
   for (let d = 1; d <= totalDays; d++) {
     const date = new Date(year, monthIndex, d);
     const dayOfWeek = date.getDay();
-
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       schedule[d] = '-';
     } else {
-      // Dording terjadwal secara berkala pada hari kerja tertentu
       if (d === 3 || d === 10 || d === 16 || d === 20 || d === 24 || d === 27) {
-        schedule[d] = 'D'; // Dinas Sambung (Dording)
+        schedule[d] = 'D';
       } else {
         schedule[d] = '-';
       }
@@ -86,13 +91,16 @@ export default function DashboardScreen({
   onNavigate,
   isDarkMode = true,
   onToggleDarkMode,
+  onOpenDrawer,
 }) {
   const [localIsDarkMode, setLocalIsDarkMode] = useState(isDarkMode);
   const activeDarkMode = onToggleDarkMode ? isDarkMode : localIsDarkMode;
   const toggleDarkMode = onToggleDarkMode || (() => setLocalIsDarkMode(!localIsDarkMode));
   const theme = activeDarkMode ? DARK_THEME : LIGHT_THEME;
 
-  // Realtime clock & date
+  const scrollRef = useRef(null);
+
+  // Realtime clock
   const [liveClock, setLiveClock] = useState(() => {
     const d = new Date();
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
@@ -110,6 +118,17 @@ export default function DashboardScreen({
 
   const clockToDisplay = currentTime || liveClock;
   const now = new Date();
+  const hourNow = now.getHours();
+
+  // Sapaan kontekstual waktu
+  const getGreeting = () => {
+    if (hourNow >= 4 && hourNow < 11) return 'Selamat Pagi';
+    if (hourNow >= 11 && hourNow < 15) return 'Selamat Siang';
+    if (hourNow >= 15 && hourNow < 18) return 'Selamat Sore';
+    return 'Selamat Malam';
+  };
+
+  const firstName = user?.name ? user.name.split(',')[0].replace(/^(Ners\.|Ns\.|dr\.|Hj\.)\s*/i, '').trim() : 'Pegawai';
   const currentDayName = DAY_FULL_ID[now.getDay()];
   const currentDateNum = now.getDate();
   const currentMonthNum = String(now.getMonth() + 1).padStart(2, '0');
@@ -126,405 +145,287 @@ export default function DashboardScreen({
   }, [currentYearNum, now.getMonth(), daysInMonth]);
 
   const [selectedDayDetail, setSelectedDayDetail] = useState(null);
-  const [selectedCalendarType, setSelectedCalendarType] = useState('dinas'); // 'dinas' | 'dording'
 
-  const handleOpenDayDetail = (dayNum, type) => {
-    setSelectedCalendarType(type);
-    setSelectedDayDetail(dayNum);
-  };
+  // Status presensi hari ini
+  const hasMasuk = Boolean(attendance?.masuk);
+  const hasPulang = Boolean(attendance?.pulang);
+
+  let presensiStatusText = 'Belum Absen Masuk';
+  if (hasMasuk && hasPulang) {
+    presensiStatusText = `Selesai • Masuk ${attendance.masuk} - Pulang ${attendance.pulang}`;
+  } else if (hasMasuk) {
+    presensiStatusText = `Sudah Masuk (${attendance.masuk}) • Siap Pulang`;
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bgMain }}>
       <ScrollView
+        ref={scrollRef}
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
       >
         {/* ================================================================= */}
-        {/* 1. TOP HEADER & BREADCRUMB (Matching Screenshot 3)                */}
+        {/* 1. HEADER PERSONAL & SAPAAN SESUAI WAKTU                         */}
         {/* ================================================================= */}
-        <View style={styles.topHeaderRow}>
-          <View>
-            <Text style={[styles.mainHeading, { color: theme.textMain }]}>Beranda</Text>
-            <View style={styles.breadcrumbRow}>
-              <Text style={[styles.breadcrumbHome, { color: theme.breadcrumbHome }]}>Beranda</Text>
-              <Text style={[styles.breadcrumbSlash, { color: theme.textMuted }]}> / </Text>
-              <Text style={[styles.breadcrumbActive, { color: theme.textSub }]}>Beranda</Text>
-            </View>
-          </View>
-
-          {/* Quick Theme Switcher (Dark / Light) */}
-          <TouchableOpacity
-            activeOpacity={0.75}
-            onPress={onToggleDarkMode}
-            style={[
-              styles.themeToggleBtn,
-              {
-                backgroundColor: theme.pillBg,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <Text style={[styles.themeToggleText, { color: theme.textMain }]}>
-              {activeDarkMode ? 'Mode Gelap' : 'Mode Terang'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View
-          style={[
-            styles.welcomeBanner,
-            {
-              backgroundColor: theme.cardSolid,
-              borderColor: theme.border,
-            },
-            Platform.OS === 'web' && {
-              boxShadow: `0 4px 20px ${theme.shadow}`,
-            },
-          ]}
-        >
-          <View style={styles.welcomeLeft}>
-            <Text style={[styles.welcomeGreeting, { color: theme.textSub }]}>Selamat Datang,</Text>
-            <Text style={[styles.welcomeUserName, { color: theme.textMain }]}>
-              {user?.name || 'YANTINI MANIK'} , {user?.badge || 'AMR'}
-            </Text>
-            <View style={styles.clockRow}>
-              <Text style={[styles.liveTimestamp, { color: theme.textSub }]}>
-                {currentDayName}, {currentDateNum} {currentMonthName} {currentYearNum} - {clockToDisplay} WIB
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ================================================================= */}
-        {/* 3. 4 MAIN ACTION CARDS (Matching Screenshot 3)                    */}
-        {/* ================================================================= */}
-        <View style={styles.actionCardsContainer}>
-          {/* Card 1: Presensi Sekarang (Biru) */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={[styles.actionCard, { backgroundColor: '#1565c0' }]}
-            onPress={() => onNavigate('presensi', 'sekarang')}
-          >
-            <View style={styles.actionCardContent}>
-              <View style={styles.actionCardTitleRow}>
-                <Text style={styles.actionCardTitleWhite}>Presensi Sekarang</Text>
+        <View style={dashStyles.headerCard}>
+          <View style={dashStyles.headerTop}>
+            <View style={dashStyles.userProfileRow}>
+              {/* Avatar dengan inisial atau logo */}
+              <View style={[dashStyles.avatarContainer, { borderColor: theme.accent, backgroundColor: theme.pillBg }]}>
+                <Image
+                  source={{ uri: RSJ_LOGO_URI }}
+                  style={{ width: 34, height: 34, resizeMode: 'contain' }}
+                />
               </View>
-              <Text style={styles.actionCardSubtitleWhite}>
-                Lakukan absensi masuk dan pulang Anda hari ini.
-              </Text>
-              <View style={styles.actionCardBadge}>
-                <Text style={styles.actionCardBadgeText}>
-                  {attendance?.masuk ? `Masuk: ${attendance.masuk}` : 'Shift 1 / Reguler RS'}
+              <View style={{ flex: 1 }}>
+                <Text style={[dashStyles.greetingText, { color: theme.textMuted }]}>
+                  {getGreeting()}, {firstName} 👋
                 </Text>
+                <Text style={[dashStyles.userNameText, { color: theme.textMain }]} numberOfLines={1}>
+                  {user?.name || 'Ners. Fitri Rahmadani, S.Kep'}
+                </Text>
+                <View style={dashStyles.rolePill}>
+                  <Text style={[dashStyles.rolePillText, { color: theme.accent }]}>
+                    {user?.badge || 'Ners Rawat Inap'} • RSJ Tampan
+                  </Text>
+                </View>
               </View>
             </View>
-          </TouchableOpacity>
 
-          {/* Card 2: Rekap Absensi (Merah) */}
+            {/* Tombol Tema Mode & Menu */}
+            <View style={dashStyles.quickActionsRow}>
+              <TouchableOpacity
+                activeOpacity={0.75}
+                onPress={toggleDarkMode}
+                style={[dashStyles.iconCircleBtn, { backgroundColor: theme.cardSolid, borderColor: theme.borderSubtle }]}
+                accessibilityLabel="Ganti Mode Gelap/Terang"
+              >
+                {activeDarkMode ? <IconSun size={18} color="#f59e0b" /> : <IconMoon size={18} color="#0284c7" />}
+              </TouchableOpacity>
+              {onOpenDrawer && (
+                <TouchableOpacity
+                  activeOpacity={0.75}
+                  onPress={onOpenDrawer}
+                  style={[dashStyles.iconCircleBtn, { backgroundColor: theme.cardSolid, borderColor: theme.borderSubtle }]}
+                  accessibilityLabel="Buka Menu"
+                >
+                  <IconMenu size={18} color={theme.textMain} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          {/* Jam Digital Besar & Tanggal Terkini */}
+          <View style={[dashStyles.liveClockBox, { backgroundColor: theme.cardSolid, borderColor: theme.borderSubtle }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <IconClock size={20} color={theme.accent} />
+              <Text style={[dashStyles.bigClockText, { color: theme.textMain }]}>
+                {clockToDisplay} <Text style={{ fontSize: 13, fontWeight: '700', color: theme.textMuted }}>WIB</Text>
+              </Text>
+            </View>
+            <Text style={[dashStyles.dateSubText, { color: theme.textSub }]}>
+              {currentDayName}, {currentDateNum} {currentMonthName} {currentYearNum}
+            </Text>
+          </View>
+        </View>
+
+        {/* ================================================================= */}
+        {/* 2. HERO CARD: PRESENSI SEKARANG (AKSI UTAMA HEROIK)               */}
+        {/* ================================================================= */}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          style={[dashStyles.heroPresensiCard, { backgroundColor: theme.accent }]}
+          onPress={() => onNavigate('presensi', 'sekarang')}
+        >
+          {/* Background pattern decor */}
+          <View style={dashStyles.heroDecorCircle} />
+
+          <View style={dashStyles.heroTopRow}>
+            <View style={dashStyles.heroIconWrap}>
+              <IconMapPin size={22} color="#ffffff" />
+            </View>
+            <View style={[dashStyles.heroStatusBadge, { backgroundColor: 'rgba(255, 255, 255, 0.22)' }]}>
+              <View style={[dashStyles.statusDot, { backgroundColor: hasMasuk ? '#34d399' : '#fde047' }]} />
+              <Text style={dashStyles.heroStatusBadgeText}>
+                {hasMasuk ? (hasPulang ? 'Selesai Dinas' : 'Masuk Tercatat') : 'Siap Presensi'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={dashStyles.heroBody}>
+            <Text style={dashStyles.heroTitle}>Presensi Sekarang</Text>
+            <Text style={dashStyles.heroSubtitle}>
+              {hasMasuk
+                ? (hasPulang ? 'Absensi harian lengkap. Terima kasih atas dedikasi Anda!' : 'Ketuk untuk melakukan absensi pulang dinas.')
+                : 'Lakukan verifikasi wajah & geofencing titik lokasi RSJ.'}
+            </Text>
+          </View>
+
+          <View style={dashStyles.heroFooter}>
+            <View style={dashStyles.heroStatusPill}>
+              <Text style={dashStyles.heroStatusPillText}>{presensiStatusText}</Text>
+            </View>
+            <View style={dashStyles.heroActionArrow}>
+              <IconChevronRight size={18} color="#ffffff" />
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {/* ================================================================= */}
+        {/* 3. MENU FITUR: GRID 3 KOLOM / 2x2 YANG BERSIH & ELEGAN            */}
+        {/* ================================================================= */}
+        <View style={dashStyles.menuSectionHeader}>
+          <Text style={[dashStyles.sectionTitleText, { color: theme.textMain }]}>Menu Layanan Pegawai</Text>
+        </View>
+
+        <View style={dashStyles.gridMenuContainer}>
+          {/* Item 1: Rekap Absensi */}
           <TouchableOpacity
-            activeOpacity={0.85}
-            style={[styles.actionCard, { backgroundColor: '#c62828' }]}
+            activeOpacity={0.8}
+            style={[dashStyles.gridCard, { backgroundColor: theme.cardSolid, borderColor: theme.borderSubtle }]}
             onPress={() => onNavigate('rekap')}
           >
-            <View style={styles.actionCardContent}>
-              <View style={styles.actionCardTitleRow}>
-                <Text style={styles.actionCardTitleWhite}>Rekap Absensi</Text>
-              </View>
-              <Text style={styles.actionCardSubtitleWhite}>
-                Lihat riwayat absensi Anda.
-              </Text>
-              <View style={styles.actionCardBadge}>
-                <Text style={styles.actionCardBadgeText}>Laporan Kehadiran & Log</Text>
-              </View>
+            <View style={[dashStyles.gridIconCircle, { backgroundColor: '#fee2e2' }]}>
+              <IconHistory size={20} color="#dc2626" />
             </View>
+            <Text style={[dashStyles.gridTitle, { color: theme.textMain }]}>Rekap Absensi</Text>
+            <Text style={[dashStyles.gridDesc, { color: theme.textMuted }]}>Riwayat & Log Kehadiran</Text>
           </TouchableOpacity>
 
-          {/* Card 3: Presensi Diluar Tilok (PDT) (Dark Slate) */}
+          {/* Item 2: Presensi Luar Tilok (PDT) */}
           <TouchableOpacity
-            activeOpacity={0.85}
-            style={[styles.actionCard, { backgroundColor: '#283747' }]}
+            activeOpacity={0.8}
+            style={[dashStyles.gridCard, { backgroundColor: theme.cardSolid, borderColor: theme.borderSubtle }]}
             onPress={() => onNavigate('pdt')}
           >
-            <View style={styles.actionCardContent}>
-              <View style={styles.actionCardTitleRow}>
-                <Text style={styles.actionCardTitleWhite}>Presensi Diluar Tilok (PDT)</Text>
-              </View>
-              <Text style={styles.actionCardSubtitleWhite}>
-                Gunakan fitur ini untuk melakukan presensi di luar lokasi tilok.
-              </Text>
-              <View style={styles.actionCardBadge}>
-                <Text style={styles.actionCardBadgeText}>Dinas Luar & Diklat RS</Text>
-              </View>
+            <View style={[dashStyles.gridIconCircle, { backgroundColor: '#f1f5f9' }]}>
+              <IconBriefcase size={20} color="#334155" />
             </View>
+            <Text style={[dashStyles.gridTitle, { color: theme.textMain }]}>Presensi PDT</Text>
+            <Text style={[dashStyles.gridDesc, { color: theme.textMuted }]}>Dinas Luar & Diklat</Text>
           </TouchableOpacity>
 
-          {/* Card 4: Presensi Dording (Kuning / Amber Gold) */}
+          {/* Item 3: Presensi Dording (Shift 2) */}
           <TouchableOpacity
-            activeOpacity={0.85}
-            style={[styles.actionCard, { backgroundColor: '#ef8c00' }]}
+            activeOpacity={0.8}
+            style={[dashStyles.gridCard, { backgroundColor: theme.cardSolid, borderColor: theme.borderSubtle }]}
             onPress={() => onNavigate('presensi', 'dording')}
           >
-            <View style={styles.actionCardContent}>
-              <View style={styles.actionCardTitleRow}>
-                <Text style={styles.actionCardTitleWhite}>Presensi Dording</Text>
-              </View>
-              <Text style={styles.actionCardSubtitleWhite}>
-                Gunakan fitur ini untuk melakukan presensi dording.
-              </Text>
-              <View style={styles.actionCardBadge}>
-                <Text style={styles.actionCardBadgeText}>
-                  {dordingAttendance?.masuk ? `Masuk: ${dordingAttendance.masuk}` : 'Dinas Sambung (Shift 2)'}
-                </Text>
-              </View>
+            <View style={[dashStyles.gridIconCircle, { backgroundColor: '#fef3c7' }]}>
+              <IconLayers size={20} color="#d97706" />
             </View>
+            <Text style={[dashStyles.gridTitle, { color: theme.textMain }]}>Presensi Dording</Text>
+            <Text style={[dashStyles.gridDesc, { color: theme.textMuted }]}>
+              {dordingAttendance?.masuk ? `Masuk: ${dordingAttendance.masuk}` : 'Dinas Sambung (Shift 2)'}
+            </Text>
           </TouchableOpacity>
         </View>
 
         {/* ================================================================= */}
-        {/* 4. CARD JADWAL DINAS (Matching Screenshot 1)                      */}
+        {/* 4. KALENDER JADWAL TERPADU (DINAS + INDIKATOR DORDING)            */}
         {/* ================================================================= */}
-        <View
-          style={[
-            styles.calendarCard,
-            {
-              backgroundColor: theme.cardSolid,
-              borderColor: theme.border,
-            },
-            Platform.OS === 'web' && {
-              boxShadow: `0 4px 16px ${theme.shadow}`,
-            },
-          ]}
-        >
-          {/* Card Header (Light Green / Sage in Light Theme, Deep Teal in Dark) */}
-          <View
-            style={[
-              styles.calendarCardHeader,
-              {
-                backgroundColor: theme.jadwalDinasHeaderBg,
-                borderBottomColor: theme.borderSubtle,
-              },
-            ]}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text
-                style={[
-                  styles.calendarCardTitle,
-                  { color: theme.jadwalDinasHeaderText },
-                ]}
-              >
-                Jadwal Dinas
+        <View style={[dashStyles.calendarCardUnified, { backgroundColor: theme.cardSolid, borderColor: theme.borderSubtle }]}>
+          <View style={dashStyles.calendarHeaderRow}>
+            <View>
+              <Text style={[dashStyles.calendarMainTitle, { color: theme.textMain }]}>
+                Jadwal Dinas & Dording
               </Text>
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
-                <Text style={{ color: theme.jadwalDinasHeaderText, fontSize: 10, fontWeight: '700' }}>
-                  Ditetapkan: Ka. Instalasi / Katim
-                </Text>
-              </View>
+              <Text style={[dashStyles.calendarSubTitle, { color: theme.textMuted }]}>
+                {currentMonthName} {currentYearNum} • Roster Terpadu
+              </Text>
+            </View>
+            <View style={[dashStyles.statusTag, { backgroundColor: theme.pillBg }]}>
+              <Text style={[dashStyles.statusTagText, { color: theme.accent }]}>Ka. Instalasi</Text>
             </View>
           </View>
 
-          {/* Card Body */}
-          <View style={styles.calendarCardBody}>
-            {/* Filter Badges (Tahun 2026, Bulan 10) */}
-            <View style={styles.filterBadgesRow}>
-              <View style={styles.greenFilterBadge}>
-                <Text style={styles.greenFilterBadgeText}>Tahun {currentYearNum}</Text>
+          {/* Hari dalam seminggu header */}
+          <View style={dashStyles.weekDaysRow}>
+            {DAY_NAMES.map((d, idx) => (
+              <View key={`day-${idx}`} style={dashStyles.weekDayCell}>
+                <Text style={[dashStyles.weekDayText, { color: idx === 0 || idx === 6 ? '#ef4444' : theme.textMuted }]}>
+                  {d}
+                </Text>
               </View>
-              <View style={styles.greenFilterBadge}>
-                <Text style={styles.greenFilterBadgeText}>Bulan {currentMonthNum}</Text>
+            ))}
+          </View>
+
+          {/* Grid Tanggal Kalender */}
+          <View style={dashStyles.daysGridUnified}>
+            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((dayNum) => {
+              const shiftCode = jadwalDinas[dayNum] || 'P';
+              const dordingCode = jadwalDording[dayNum] || '-';
+              const hasDording = dordingCode === 'D';
+              const isToday = dayNum === currentDateNum;
+              const shiftInfo = SHIFT_TYPES[shiftCode] || SHIFT_TYPES.P;
+
+              return (
+                <TouchableOpacity
+                  key={`day-${dayNum}`}
+                  activeOpacity={0.75}
+                  style={[
+                    dashStyles.dayTileUnified,
+                    { backgroundColor: isToday ? theme.pillBg : (activeDarkMode ? 'rgba(255,255,255,0.03)' : '#f8fafc') },
+                    isToday && { borderColor: theme.accent, borderWidth: 1.5 },
+                  ]}
+                  onPress={() => setSelectedDayDetail(dayNum)}
+                >
+                  <Text style={[dashStyles.dayNumberText, { color: isToday ? theme.accent : theme.textMain }]}>
+                    {dayNum}
+                  </Text>
+                  
+                  {/* Badge Kode Shift */}
+                  <View style={[dashStyles.shiftBadgeMini, { backgroundColor: shiftInfo.color }]}>
+                    <Text style={dashStyles.shiftBadgeMiniText}>{shiftCode}</Text>
+                  </View>
+
+                  {/* Dot Indikator Dording (jika ada jadwal dording) */}
+                  {hasDording && (
+                    <View style={dashStyles.dordingDotIndicator} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Legenda Keterangan Shift */}
+          <View style={[dashStyles.legendBoxUnified, { backgroundColor: theme.pillBg, borderColor: theme.borderSubtle }]}>
+            <Text style={[dashStyles.legendTitleText, { color: theme.textMain }]}>Keterangan Shift:</Text>
+            <View style={dashStyles.legendWrap}>
+              <View style={dashStyles.legendItemRow}>
+                <View style={[dashStyles.legendDotSmall, { backgroundColor: '#059669' }]} />
+                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>P = Pagi (07-16)</Text>
               </View>
-            </View>
-
-            {/* Grid 1 to daysInMonth (Sesuai kalender bulan & tahun ini) */}
-            <View style={styles.daysGrid}>
-              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((dayNum) => {
-                const shiftCode = jadwalDinas[dayNum] || 'P';
-                const isToday = dayNum === currentDateNum;
-                const shiftInfo = SHIFT_TYPES[shiftCode] || SHIFT_TYPES.P;
-
-                // Color of badge tile matching original website
-                let badgeBgColor = '#16a34a'; // Green for P
-                if (shiftCode === 'C') badgeBgColor = '#343a40'; // Dark Slate for Cuti
-                if (shiftCode === 'L') badgeBgColor = '#6c757d'; // Gray for Libur
-                if (shiftCode === 'S') badgeBgColor = '#0284c7'; // Blue for Sore
-                if (shiftCode === 'M') badgeBgColor = '#7c3aed'; // Purple for Malam
-                if (shiftCode === 'D') badgeBgColor = '#d97706'; // Amber for Dording
-
-                return (
-                  <TouchableOpacity
-                    key={`dinas-${dayNum}`}
-                    activeOpacity={0.8}
-                    style={[
-                      styles.dayTile,
-                      { backgroundColor: badgeBgColor },
-                      isToday && styles.todayTileHighlight,
-                    ]}
-                    onPress={() => handleOpenDayDetail(dayNum, 'dinas')}
-                  >
-                    <Text style={styles.dayTileNumber}>{dayNum}</Text>
-                    <Text style={styles.dayTileShiftCode}>{shiftCode}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Shift Legend */}
-            <View
-              style={[
-                styles.legendContainer,
-                {
-                  backgroundColor: theme.pillBg,
-                  borderColor: theme.borderSubtle,
-                },
-              ]}
-            >
-              <Text style={[styles.legendTitle, { color: theme.textMain }]}>Keterangan Kode Shift:</Text>
-              <View style={styles.legendItemsRow}>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#16a34a' }]} />
-                  <Text style={[styles.legendText, { color: theme.textSub }]}>P = Pagi (07:00-16:00)</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#343a40' }]} />
-                  <Text style={[styles.legendText, { color: theme.textSub }]}>C = Cuti</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#6c757d' }]} />
-                  <Text style={[styles.legendText, { color: theme.textSub }]}>L = Libur</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#0284c7' }]} />
-                  <Text style={[styles.legendText, { color: theme.textSub }]}>S = Sore (13:00-21:00)</Text>
-                </View>
+              <View style={dashStyles.legendItemRow}>
+                <View style={[dashStyles.legendDotSmall, { backgroundColor: '#0284c7' }]} />
+                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>S = Sore (13-21)</Text>
+              </View>
+              <View style={dashStyles.legendItemRow}>
+                <View style={[dashStyles.legendDotSmall, { backgroundColor: '#475569' }]} />
+                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>C = Cuti</Text>
+              </View>
+              <View style={dashStyles.legendItemRow}>
+                <View style={[dashStyles.legendDotSmall, { backgroundColor: '#94a3b8' }]} />
+                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>L = Libur</Text>
+              </View>
+              <View style={dashStyles.legendItemRow}>
+                <View style={[dashStyles.legendDotSmall, { backgroundColor: '#d97706', borderRadius: 2 }]} />
+                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>Titik Oranye = Dording</Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* ================================================================= */}
-        {/* 5. CARD JADWAL DORDING (Matching Screenshot 2)                     */}
-        {/* ================================================================= */}
-        <View
-          style={[
-            styles.calendarCard,
-            {
-              backgroundColor: theme.cardSolid,
-              borderColor: theme.border,
-            },
-            Platform.OS === 'web' && {
-              boxShadow: `0 4px 16px ${theme.shadow}`,
-            },
-          ]}
-        >
-          {/* Card Header (Light Coral/Pink in Light Theme, Deep Rose in Dark) */}
-          <View
-            style={[
-              styles.calendarCardHeader,
-              {
-                backgroundColor: theme.jadwalDordingHeaderBg,
-                borderBottomColor: theme.borderSubtle,
-              },
-            ]}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text
-                style={[
-                  styles.calendarCardTitle,
-                  { color: theme.jadwalDordingHeaderText },
-                ]}
-              >
-                Jadwal Dording (Dinas Tambahan)
-              </Text>
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
-                <Text style={{ color: theme.jadwalDordingHeaderText, fontSize: 10, fontWeight: '700' }}>
-                  Penugasan: Ka. Instalasi
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Card Body */}
-          <View style={styles.calendarCardBody}>
-            {/* Filter Badges (Tahun 2026, Bulan 10) */}
-            <View style={styles.filterBadgesRow}>
-              <View style={styles.greenFilterBadge}>
-                <Text style={styles.greenFilterBadgeText}>Tahun {currentYearNum}</Text>
-              </View>
-              <View style={styles.greenFilterBadge}>
-                <Text style={styles.greenFilterBadgeText}>Bulan {currentMonthNum}</Text>
-              </View>
-            </View>
-
-            {/* Grid 1 to daysInMonth (Sesuai kalender bulan & tahun ini) */}
-            <View style={styles.daysGrid}>
-              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((dayNum) => {
-                const dordingCode = jadwalDording[dayNum] || '-';
-                const isDordingAssigned = dordingCode !== '-';
-                const isToday = dayNum === currentDateNum;
-
-                // Color matching original website (Dark slate #343a40 for '-', Amber for 'D')
-                const badgeBgColor = isDordingAssigned ? '#f59e0b' : '#343a40';
-
-                return (
-                  <TouchableOpacity
-                    key={`dording-${dayNum}`}
-                    activeOpacity={0.8}
-                    style={[
-                      styles.dayTile,
-                      { backgroundColor: badgeBgColor },
-                      isToday && styles.todayTileHighlight,
-                    ]}
-                    onPress={() => handleOpenDayDetail(dayNum, 'dording')}
-                  >
-                    <Text
-                      style={[
-                        styles.dayTileNumber,
-                        isDordingAssigned && { color: '#0f172a' },
-                      ]}
-                    >
-                      {dayNum}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.dayTileShiftCode,
-                        isDordingAssigned && { color: '#0f172a' },
-                      ]}
-                    >
-                      {dordingCode}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <View style={{ marginTop: 12 }}>
-              <Text style={{ fontSize: 11, color: theme.textMuted, fontStyle: 'italic' }}>
-                * Tanda (-) menunjukkan hari bebas tugas dinas tambahan / shift sambung.
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ================================================================= */}
-        {/* 6. FOOTER (Matching Screenshot 2)                                 */}
-        {/* ================================================================= */}
-        <View style={[styles.footerContainer, { borderTopColor: theme.footerBorder }]}>
-          <Text style={[styles.footerText, { color: theme.footerText }]}>
-            © 2025{' '}
-            <Text style={{ fontWeight: '800', color: theme.accent }}>
-              SIAP - Sistem Absensi Pegawai
-            </Text>
-            . Hak Cipta Dilindungi.
+        {/* Footer */}
+        <View style={dashStyles.footerWrap}>
+          <Text style={[dashStyles.footerText, { color: theme.textMuted }]}>
+            © 2026 SIAP • RS Jiwa Tampan Provinsi Riau
           </Text>
-          <View style={styles.footerLinkRow}>
-            <Text style={[styles.footerSubText, { color: theme.textMuted }]}>
-              siap.rsjiwatampan.com
-            </Text>
-          </View>
         </View>
 
         {/* ================================================================= */}
-        {/* 7. INTERACTIVE MODAL: DETAIL JADWAL TANGGAL                       */}
+        {/* 5. MODAL DETAIL TANGGAL KALENDER                                  */}
         {/* ================================================================= */}
         <Modal
           visible={selectedDayDetail !== null}
@@ -532,127 +433,75 @@ export default function DashboardScreen({
           animationType="fade"
           onRequestClose={() => setSelectedDayDetail(null)}
         >
-          <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
-            <View
-              style={[
-                styles.modalCard,
-                {
-                  backgroundColor: theme.cardSolid,
-                  borderColor: theme.border,
-                },
-                Platform.OS === 'web' && {
-                  boxShadow: `0 20px 45px ${theme.shadow}`,
-                },
-              ]}
-            >
-              <View style={styles.modalHeaderRow}>
+          <View style={[dashStyles.modalOverlay, { backgroundColor: theme.overlay }]}>
+            <View style={[dashStyles.modalContent, { backgroundColor: theme.cardSolid, borderColor: theme.borderSubtle }]}>
+              <View style={dashStyles.modalHeaderRow}>
                 <View>
-                  <Text style={[styles.modalTitle, { color: theme.textMain }]}>
-                    Detail {selectedCalendarType === 'dording' ? 'Jadwal Dording' : 'Jadwal Dinas'}
-                  </Text>
+                  <Text style={[dashStyles.modalTitle, { color: theme.textMain }]}>Detail Jadwal Kerja</Text>
                   {selectedDayDetail && (() => {
                     const selDate = new Date(currentYearNum, now.getMonth(), selectedDayDetail);
-                    const selDayName = DAY_FULL_ID[selDate.getDay()];
                     return (
-                      <Text style={[styles.modalSubtitle, { color: theme.textSub }]}>
-                        {selDayName}, {selectedDayDetail} {currentMonthName} {currentYearNum}
+                      <Text style={[dashStyles.modalSubtitle, { color: theme.textSub }]}>
+                        {DAY_FULL_ID[selDate.getDay()]}, {selectedDayDetail} {currentMonthName} {currentYearNum}
                       </Text>
                     );
                   })()}
                 </View>
                 <TouchableOpacity
-                  style={[styles.modalCloseBtn, { backgroundColor: theme.pillBg }]}
+                  style={[dashStyles.modalCloseCircle, { backgroundColor: theme.pillBg }]}
                   onPress={() => setSelectedDayDetail(null)}
                 >
-                  <Text style={{ color: theme.textMain, fontSize: 16, fontWeight: 'bold' }}>X</Text>
+                  <Text style={{ color: theme.textMain, fontSize: 14, fontWeight: '800' }}>✕</Text>
                 </TouchableOpacity>
               </View>
 
               {selectedDayDetail && (() => {
-                if (selectedCalendarType === 'dinas') {
-                  const shiftCode = jadwalDinas[selectedDayDetail] || 'P';
-                  const shift = SHIFT_TYPES[shiftCode] || SHIFT_TYPES.P;
-                  return (
-                    <View style={{ marginVertical: 16, gap: 14 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-                        <View style={[styles.modalShiftBigBadge, { backgroundColor: shift.color }]}>
-                          <Text style={styles.modalShiftBigCode}>{shift.code}</Text>
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.modalShiftLabel, { color: theme.textMain }]}>
-                            {shift.label}
-                          </Text>
-                          <Text style={[styles.modalShiftTime, { color: theme.textSub }]}>
-                            Jam Kerja: {shift.time}
-                          </Text>
-                        </View>
-                      </View>
+                const shiftCode = jadwalDinas[selectedDayDetail] || 'P';
+                const dordingCode = jadwalDording[selectedDayDetail] || '-';
+                const hasDording = dordingCode === 'D';
+                const shift = SHIFT_TYPES[shiftCode] || SHIFT_TYPES.P;
 
-                      <View
-                        style={[
-                          styles.modalInfoBox,
-                          { backgroundColor: theme.pillBg, borderColor: theme.borderSubtle },
-                        ]}
-                      >
-                        <Text style={[styles.modalInfoText, { color: theme.textMain }]}>
+                return (
+                  <View style={{ marginVertical: 14, gap: 12 }}>
+                    {/* Shift Reguler Card */}
+                    <View style={[dashStyles.detailShiftCard, { backgroundColor: shift.bg, borderColor: shift.color }]}>
+                      <View style={[dashStyles.detailShiftBadge, { backgroundColor: shift.color }]}>
+                        <Text style={dashStyles.detailShiftBadgeText}>{shift.code}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[dashStyles.detailShiftLabel, { color: '#0f172a' }]}>{shift.label}</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#334155', marginTop: 2 }}>
+                          Jam Kerja: {shift.time}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
                           {shift.desc}
                         </Text>
                       </View>
                     </View>
-                  );
-                } else {
-                  const dordingCode = jadwalDording[selectedDayDetail] || '-';
-                  const isAssigned = dordingCode !== '-';
-                  return (
-                    <View style={{ marginVertical: 16, gap: 14 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-                        <View
-                          style={[
-                            styles.modalShiftBigBadge,
-                            { backgroundColor: isAssigned ? '#f59e0b' : '#343a40' },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.modalShiftBigCode,
-                              isAssigned && { color: '#0f172a' },
-                            ]}
-                          >
-                            {dordingCode}
-                          </Text>
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.modalShiftLabel, { color: theme.textMain }]}>
-                            {isAssigned ? 'Dinas Dording (Tambahan)' : 'Bebas Dording'}
-                          </Text>
-                          <Text style={[styles.modalShiftTime, { color: theme.textSub }]}>
-                            {isAssigned ? 'Shift Sambung: 13:00 - 21:00 WIB' : 'Tidak ada jadwal dording'}
-                          </Text>
-                        </View>
-                      </View>
 
-                      <View
-                        style={[
-                          styles.modalInfoBox,
-                          { backgroundColor: theme.pillBg, borderColor: theme.borderSubtle },
-                        ]}
-                      >
-                        <Text style={[styles.modalInfoText, { color: theme.textMain }]}>
-                          {isAssigned
-                            ? 'Pegawai dijadwalkan dinas sambung (dording) pada instalasi rawat inap RS Jiwa Tampan.'
-                            : 'Pegawai tidak memiliki penugasan shift tambahan untuk tanggal ini.'}
+                    {/* Dording Status Card */}
+                    <View style={[dashStyles.detailShiftCard, { backgroundColor: hasDording ? '#fef3c7' : '#f8fafc', borderColor: hasDording ? '#d97706' : '#cbd5e1' }]}>
+                      <View style={[dashStyles.detailShiftBadge, { backgroundColor: hasDording ? '#d97706' : '#64748b' }]}>
+                        <Text style={dashStyles.detailShiftBadgeText}>{hasDording ? 'D' : '-'}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[dashStyles.detailShiftLabel, { color: '#0f172a' }]}>
+                          {hasDording ? 'Penugasan Dording (Shift 2)' : 'Bebas Dinas Sambung'}
+                        </Text>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#334155', marginTop: 2 }}>
+                          {hasDording ? 'Waktu: 13:00 - 21:00 WIB' : 'Tidak ada jadwal shift sambung hari ini.'}
                         </Text>
                       </View>
                     </View>
-                  );
-                }
+                  </View>
+                );
               })()}
 
               <TouchableOpacity
-                style={styles.modalActionCloseBtn}
+                style={[dashStyles.modalCloseBtnAction, { backgroundColor: theme.accent }]}
                 onPress={() => setSelectedDayDetail(null)}
               >
-                <Text style={styles.modalActionCloseBtnText}>Tutup Informasi</Text>
+                <Text style={dashStyles.modalCloseBtnText}>Tutup Informasi</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -662,347 +511,436 @@ export default function DashboardScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  topHeaderRow: {
+const dashStyles = StyleSheet.create({
+  // ─── Header Personal ───
+  headerCard: {
+    marginBottom: 18,
+    gap: 12,
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
   },
-  mainHeading: {
-    fontSize: 24,
+  userProfileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  avatarContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  greetingText: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  userNameText: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginTop: 1,
+    letterSpacing: 0.2,
+  },
+  rolePill: {
+    alignSelf: 'flex-start',
+    marginTop: 2,
+  },
+  rolePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  quickActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  iconCircleBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ─── Live Clock Box ───
+  liveClockBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  bigClockText: {
+    fontSize: 20,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 0.5,
+  },
+  dateSubText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // ─── Hero Card: Presensi Sekarang ───
+  heroPresensiCard: {
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 20,
+    overflow: 'hidden',
+    position: 'relative',
+    ...(Platform.OS === 'web'
+      ? {
+          boxShadow: '0 8px 24px -4px rgba(2, 132, 199, 0.35)',
+        }
+      : { elevation: 6 }),
+  },
+  heroDecorCircle: {
+    position: 'absolute',
+    right: -30,
+    top: -30,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  heroIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  heroStatusBadgeText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  heroBody: {
+    marginVertical: 12,
+  },
+  heroTitle: {
+    color: '#ffffff',
+    fontSize: 20,
     fontWeight: '900',
     letterSpacing: 0.3,
   },
-  breadcrumbRow: {
+  heroSubtitle: {
+    color: 'rgba(255, 255, 255, 0.92)',
+    fontSize: 12.5,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  heroFooter: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 4,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  heroStatusPill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  heroStatusPillText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  heroActionArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ─── Menu Grid ───
+  menuSectionHeader: {
+    marginBottom: 10,
+  },
+  sectionTitleText: {
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  gridMenuContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  gridCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    alignItems: 'flex-start',
+    ...(Platform.OS === 'web'
+      ? {
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.04)',
+        }
+      : { elevation: 2 }),
+  },
+  gridIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  gridTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  gridDesc: {
+    fontSize: 10.5,
+    lineHeight: 14,
+  },
+
+  // ─── Kalender Terpadu ───
+  calendarCardUnified: {
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    marginBottom: 20,
+    ...(Platform.OS === 'web'
+      ? {
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
+        }
+      : { elevation: 2 }),
+  },
+  calendarHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+  },
+  calendarMainTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: 0.2,
+  },
+  calendarSubTitle: {
+    fontSize: 11.5,
+    fontWeight: '600',
     marginTop: 2,
   },
-  breadcrumbHome: {
-    fontSize: 12.5,
+  statusTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  statusTagText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+  },
+  weekDaysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(150, 150, 150, 0.15)',
+    marginBottom: 8,
+  },
+  weekDayCell: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  weekDayText: {
+    fontSize: 11,
     fontWeight: '700',
   },
-  breadcrumbSlash: {
-    fontSize: 12.5,
-    fontWeight: '600',
-  },
-  breadcrumbActive: {
-    fontSize: 12.5,
-    fontWeight: '600',
-  },
-  themeToggleBtn: {
+  daysGridUnified: {
     flexDirection: 'row',
-    alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
+    justifyContent: 'flex-start',
   },
-  themeToggleText: {
+  dayTileUnified: {
+    width: '13%',
+    aspectRatio: 0.85,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    padding: 2,
+  },
+  dayNumberText: {
     fontSize: 11.5,
     fontWeight: '800',
   },
-
-  welcomeBanner: {
-    borderRadius: 14,
-    padding: 18,
-    marginBottom: 20,
-    borderWidth: 1,
+  shiftBadgeMini: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+    marginTop: 2,
   },
-  welcomeLeft: {
-    gap: 3,
-  },
-  welcomeGreeting: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  welcomeUserName: {
-    fontSize: 19,
-    fontWeight: '900',
-    letterSpacing: 0.4,
-  },
-  clockRow: {
-    marginTop: 4,
-  },
-  liveTimestamp: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-
-  actionCardsContainer: {
-    gap: 12,
-    marginBottom: 22,
-  },
-  actionCard: {
-    borderRadius: 14,
-    padding: 16,
-    ...(Platform.OS === 'web'
-      ? {
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-        }
-      : { elevation: 3 }),
-  },
-  actionCardContent: {
-    gap: 4,
-  },
-  actionCardTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  actionCardIconWhite: {
-    fontSize: 18,
-  },
-  actionCardTitleWhite: {
+  shiftBadgeMiniText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 9,
     fontWeight: '900',
   },
-  actionCardSubtitleWhite: {
-    color: 'rgba(255, 255, 255, 0.92)',
-    fontSize: 12,
-    lineHeight: 16,
+  dordingDotIndicator: {
+    position: 'absolute',
+    top: 3,
+    right: 3,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#d97706',
   },
-  actionCardBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 8,
-    marginTop: 6,
-  },
-  actionCardBadgeText: {
-    color: '#ffffff',
-    fontSize: 10.5,
-    fontWeight: '800',
-  },
-
-  actionCardIconDark: {
-    fontSize: 18,
-  },
-  actionCardTitleDark: {
-    color: '#0f172a',
-    fontSize: 16,
-    fontWeight: '900',
-  },
-  actionCardSubtitleDark: {
-    color: '#1e293b',
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  actionCardBadgeDark: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0, 0, 0, 0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 8,
-    marginTop: 6,
-  },
-  actionCardBadgeTextDark: {
-    color: '#0f172a',
-    fontSize: 10.5,
-    fontWeight: '800',
-  },
-
-  calendarCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    overflow: 'hidden',
-    marginBottom: 22,
-  },
-  calendarCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  calendarCardTitle: {
-    fontSize: 14.5,
-    fontWeight: '900',
-  },
-  calendarCardBody: {
-    padding: 16,
-  },
-
-  filterBadgesRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  greenFilterBadge: {
-    backgroundColor: '#16a34a',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  greenFilterBadgeText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-
-  daysGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'flex-start',
-  },
-  dayTile: {
-    width: 44,
-    height: 48,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 2,
-  },
-  todayTileHighlight: {
-    borderWidth: 2,
-    borderColor: '#38bdf8',
-    transform: [{ scale: 1.05 }],
-  },
-  dayTileNumber: {
-    color: '#ffffff',
-    fontSize: 12.5,
-    fontWeight: '900',
-    lineHeight: 15,
-  },
-  dayTileShiftCode: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: '900',
-    lineHeight: 13,
-  },
-
-  legendContainer: {
-    marginTop: 16,
-    padding: 12,
+  legendBoxUnified: {
+    marginTop: 14,
+    padding: 10,
     borderRadius: 12,
     borderWidth: 1,
   },
-  legendTitle: {
-    fontSize: 11.5,
+  legendTitleText: {
+    fontSize: 11,
     fontWeight: '800',
-    marginBottom: 8,
+    marginBottom: 6,
   },
-  legendItemsRow: {
+  legendWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 10,
   },
-  legendItem: {
+  legendItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  legendDotSmall: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  legendText: {
-    fontSize: 11,
-    fontWeight: '700',
+  legendItemText: {
+    fontSize: 10.5,
+    fontWeight: '600',
   },
 
-  footerContainer: {
-    marginTop: 10,
-    paddingTop: 18,
-    borderTopWidth: 1,
+  // ─── Footer ───
+  footerWrap: {
     alignItems: 'center',
-    gap: 4,
+    paddingVertical: 8,
   },
   footerText: {
-    fontSize: 11.5,
-    textAlign: 'center',
-  },
-  footerLinkRow: {
-    marginTop: 2,
-  },
-  footerSubText: {
     fontSize: 11,
     fontWeight: '600',
   },
 
+  // ─── Modal ───
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
   },
-  modalCard: {
+  modalContent: {
     width: '100%',
     maxWidth: 380,
     borderRadius: 20,
     borderWidth: 1,
-    padding: 20,
+    padding: 18,
+    ...(Platform.OS === 'web'
+      ? {
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+        }
+      : { elevation: 6 }),
   },
   modalHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingBottom: 12,
+    paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(150, 150, 150, 0.2)',
+    borderBottomColor: 'rgba(150, 150, 150, 0.15)',
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '900',
   },
   modalSubtitle: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '600',
     marginTop: 2,
   },
-  modalCloseBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  modalCloseCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalShiftBigBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalShiftBigCode: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: '900',
-  },
-  modalShiftLabel: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  modalShiftTime: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  modalInfoBox: {
+  detailShiftCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
   },
-  modalInfoText: {
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: '600',
+  detailShiftBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  modalActionCloseBtn: {
-    backgroundColor: '#0284c7',
+  detailShiftBadgeText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  detailShiftLabel: {
+    fontSize: 13.5,
+    fontWeight: '800',
+  },
+  modalCloseBtnAction: {
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 6,
   },
-  modalActionCloseBtnText: {
+  modalCloseBtnText: {
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '800',
