@@ -16,7 +16,7 @@ export default function BottomNav({ activeScreen, onNavigate, user, theme }) {
       id: 'jadwal',
       label: 'Jadwal',
       icon: (color) => <IconCalendar size={22} color={color} />,
-      onPress: () => onNavigate('dashboard', 'jadwal'), // Scroll atau navigasi ke bagian jadwal
+      onPress: () => onNavigate('jadwal'),
     },
     {
       id: 'rekap',

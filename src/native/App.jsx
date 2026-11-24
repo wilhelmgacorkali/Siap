@@ -14,6 +14,7 @@ import AttendanceScreen from './screens/AttendanceScreen';
 import { ReportsScreen } from './screens/ReportsScreen';
 import PdtScreen from './screens/PdtScreen';
 import AdminScreen from './screens/AdminScreen';
+import ScheduleScreen from './screens/ScheduleScreen';
 import Drawer from './components/Drawer';
 import BottomNav from './components/BottomNav';
 import { styles, DARK_THEME, LIGHT_THEME } from './theme';
@@ -359,6 +360,7 @@ export default function App() {
       return mode === 'dording' ? 'Presensi Dording' : 'Presensi Sekarang';
     }
     if (screen === 'rekap') return 'Rekap Absensi';
+    if (screen === 'jadwal') return 'Jadwal Dinas & Dording';
     if (screen === 'pdt') return 'Pegawai Presensi PDT';
     if (screen === 'admin') return 'Dashboard Admin';
     return 'SIAP RSJ Tampan';
@@ -376,8 +378,8 @@ export default function App() {
       <View style={[styles.appContainer, { backgroundColor: theme.bgMain }]}>
         <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
 
-        {/* Global App Header (Hanya tampil di luar Beranda & Admin, agar tidak ganda dengan Header masing-masing) */}
-        {screen !== 'dashboard' && screen !== 'admin' && (
+        {/* Global App Header (Hanya tampil di luar Beranda, Admin, & Jadwal agar tidak bertumpuk) */}
+        {screen !== 'dashboard' && screen !== 'admin' && screen !== 'jadwal' && (
           <View style={[styles.header, { backgroundColor: theme.bgHero, borderBottomColor: theme.border }]}>
             <View style={styles.headerLeft}>
               <TouchableOpacity
@@ -460,6 +462,16 @@ export default function App() {
               isDarkMode={isDarkMode}
               theme={theme}
               onBack={() => setScreen('dashboard')}
+            />
+          )}
+
+          {screen === 'jadwal' && (
+            <ScheduleScreen
+              user={effectiveUser}
+              currentTime={currentTime}
+              onBack={() => setScreen('dashboard')}
+              isDarkMode={isDarkMode}
+              theme={theme}
             />
           )}
 

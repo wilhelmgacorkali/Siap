@@ -332,12 +332,16 @@ export default function DashboardScreen({
                 Jadwal Dinas & Dording
               </Text>
               <Text style={[dashStyles.calendarSubTitle, { color: theme.textMuted }]}>
-                {currentMonthName} {currentYearNum} • Ketuk tanggal untuk detail
+                {currentMonthName} {currentYearNum} • Ketuk tanggal untuk rincian shift
               </Text>
             </View>
-            <View style={[dashStyles.statusTag, { backgroundColor: theme.pillBg }]}>
-              <Text style={[dashStyles.statusTagText, { color: theme.accent }]}>Ka. Instalasi</Text>
-            </View>
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => onNavigate && onNavigate('jadwal')}
+              style={[dashStyles.statusTag, { backgroundColor: theme.pillBg, borderColor: theme.borderSubtle, borderWidth: 1 }]}
+            >
+              <Text style={[dashStyles.statusTagText, { color: theme.accent }]}>Jadwal Lengkap →</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Hari dalam seminggu header */}
@@ -358,6 +362,7 @@ export default function DashboardScreen({
               const dordingCode = jadwalDording[dayNum] || '-';
               const hasDording = dordingCode === 'D';
               const isToday = dayNum === currentDateNum;
+              const isSelected = selectedDayDetail === dayNum;
               const shiftInfo = SHIFT_TYPES[shiftCode] || SHIFT_TYPES.P;
 
               return (
@@ -368,12 +373,13 @@ export default function DashboardScreen({
                     dashStyles.dayTileUnified,
                     { backgroundColor: shiftInfo.bg },
                     isToday && { borderColor: theme.accent, borderWidth: 2 },
+                    isSelected && { borderColor: '#d97706', borderWidth: 2.5, transform: [{ scale: 1.05 }] },
                     hasDording && dashStyles.dayTileDordingRing,
                   ]}
-                  onPress={() => setSelectedDayDetail(dayNum)}
+                  onPress={() => setSelectedDayDetail(selectedDayDetail === dayNum ? null : dayNum)}
                 >
                   {/* Tanggal kecil di pojok kiri atas */}
-                  <Text style={[dashStyles.dayCornerNumber, isToday && { color: theme.accent, fontWeight: '900' }]}>
+                  <Text style={[dashStyles.dayCornerNumber, (isToday || isSelected) && { color: isSelected ? '#b45309' : theme.accent, fontWeight: '900' }]}>
                     {dayNum}
                   </Text>
 
@@ -392,6 +398,47 @@ export default function DashboardScreen({
               );
             })}
           </View>
+
+          {/* Rincian Shift Tanggal Terpilih (Langsung Tampak & Reaktif) */}
+          {selectedDayDetail && (() => {
+            const selDate = new Date(currentYearNum, now.getMonth(), selectedDayDetail);
+            const shiftCode = jadwalDinas[selectedDayDetail] || 'P';
+            const dordingCode = jadwalDording[selectedDayDetail] || '-';
+            const hasDording = dordingCode === 'D';
+            const shift = SHIFT_TYPES[shiftCode] || SHIFT_TYPES.P;
+
+            return (
+              <View style={[dashStyles.inlineDetailCard, { backgroundColor: shift.bg, borderColor: shift.color }]}>
+                <View style={dashStyles.inlineDetailHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[dashStyles.inlineDetailDate, { color: '#0f172a' }]}>
+                      {DAY_FULL_ID[selDate.getDay()]}, {selectedDayDetail} {currentMonthName} {currentYearNum}
+                    </Text>
+                    <Text style={dashStyles.inlineDetailShiftName}>
+                      {shift.label} ({shift.time})
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setSelectedDayDetail(null)}
+                    style={dashStyles.inlineDetailCloseBtn}
+                  >
+                    <Text style={{ fontSize: 13, color: '#64748b', fontWeight: '800' }}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={dashStyles.inlineDetailDesc}>{shift.desc}</Text>
+
+                {hasDording && (
+                  <View style={dashStyles.inlineDordingBadgeRow}>
+                    <View style={dashStyles.inlineDordingDot} />
+                    <Text style={dashStyles.inlineDordingText}>
+                      Penugasan Dording Aktif: 13:00 – 21:00 WIB (Shift ke-2)
+                    </Text>
+                  </View>
+                )}
+              </View>
+            );
+          })()}
 
           {/* Legenda Keterangan Shift */}
           <View style={[dashStyles.legendBoxUnified, { backgroundColor: theme.pillBg, borderColor: theme.borderSubtle }]}>
@@ -890,6 +937,62 @@ const dashStyles = StyleSheet.create({
   legendItemText: {
     fontSize: 11.5,
     fontWeight: '600',
+  },
+
+  // ─── Inline Shift Detail ───
+  inlineDetailCard: {
+    marginTop: 12,
+    borderRadius: 12,
+    padding: 12,
+    borderLeftWidth: 4,
+    borderWidth: 1,
+    gap: 6,
+  },
+  inlineDetailHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  inlineDetailDate: {
+    fontSize: 13.5,
+    fontWeight: '900',
+  },
+  inlineDetailShiftName: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#334155',
+    marginTop: 1,
+  },
+  inlineDetailCloseBtn: {
+    padding: 4,
+    borderRadius: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  inlineDetailDesc: {
+    fontSize: 12,
+    color: '#64748b',
+    lineHeight: 16,
+  },
+  inlineDordingBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+    backgroundColor: '#fef3c7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  inlineDordingDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#d97706',
+  },
+  inlineDordingText: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    color: '#92400e',
   },
 
   // ─── Footer ───
