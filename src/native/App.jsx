@@ -376,8 +376,8 @@ export default function App() {
       <View style={[styles.appContainer, { backgroundColor: theme.bgMain }]}>
         <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
 
-        {/* Global App Header (Hanya tampil di luar Beranda, agar tidak ganda dengan Header Beranda) */}
-        {screen !== 'dashboard' && (
+        {/* Global App Header (Hanya tampil di luar Beranda & Admin, agar tidak ganda dengan Header masing-masing) */}
+        {screen !== 'dashboard' && screen !== 'admin' && (
           <View style={[styles.header, { backgroundColor: theme.bgHero, borderBottomColor: theme.border }]}>
             <View style={styles.headerLeft}>
               <TouchableOpacity
