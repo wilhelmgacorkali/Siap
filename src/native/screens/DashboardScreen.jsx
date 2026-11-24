@@ -15,7 +15,6 @@ import { RSJ_LOGO_URI } from '../assets';
 import {
   IconClock,
   IconCheckCircle,
-  IconAlertCircle,
   IconBriefcase,
   IconLayers,
   IconHistory,
@@ -27,13 +26,13 @@ import {
 } from '../components/Icons';
 
 const SHIFT_TYPES = {
-  P: { code: 'P', label: 'Shift Pagi', time: '07:00 - 16:00', color: '#059669', bg: '#ecfdf5', desc: 'Masuk: 07:00 - 08:00 | Pulang: 14:00 - 16:00' },
-  S: { code: 'S', label: 'Shift Sore', time: '13:00 - 21:00', color: '#0284c7', bg: '#e0f2fe', desc: 'Presensi Masuk s/d 14:00 | Pulang: 20:00 - 21:00' },
-  M: { code: 'M', label: 'Shift Malam', time: '20:30 - 07:30', color: '#7c3aed', bg: '#f3e8ff', desc: 'Jaga Malam Rawat Inap RSJ Tampan' },
-  D: { code: 'D', label: 'Shift Dording', time: '13:00 - 21:00', color: '#d97706', bg: '#fef3c7', desc: 'Dinas Sambung Berkelanjutan (Shift 2)' },
-  DM: { code: 'DM', label: 'Dording Malam', time: '19:30 - 08:00', color: '#ea580c', bg: '#ffedd5', desc: 'Dinas Sambung Malam Perawatan' },
-  C: { code: 'C', label: 'Cuti Resmi', time: 'Cuti Tahunan / Sakit', color: '#475569', bg: '#f1f5f9', desc: 'Izin Cuti Terdaftar di SIMRS' },
-  L: { code: 'L', label: 'Libur / Off', time: 'Bebas Tugas', color: '#94a3b8', bg: '#f8fafc', desc: 'Hari Bebas Dinas Roster' },
+  P: { code: 'P', label: 'Shift Pagi', time: '07:00 - 16:00', color: '#059669', bg: '#ecfdf5', textOnBadge: '#ffffff', desc: 'Masuk: 07:00 - 08:00 | Pulang: 14:00 - 16:00' },
+  S: { code: 'S', label: 'Shift Sore', time: '13:00 - 21:00', color: '#0284c7', bg: '#e0f2fe', textOnBadge: '#ffffff', desc: 'Presensi Masuk s/d 14:00 | Pulang: 20:00 - 21:00' },
+  M: { code: 'M', label: 'Shift Malam', time: '20:30 - 07:30', color: '#7c3aed', bg: '#f3e8ff', textOnBadge: '#ffffff', desc: 'Jaga Malam Rawat Inap RSJ Tampan' },
+  D: { code: 'D', label: 'Shift Dording', time: '13:00 - 21:00', color: '#d97706', bg: '#fef3c7', textOnBadge: '#ffffff', desc: 'Dinas Sambung Berkelanjutan (Shift 2)' },
+  DM: { code: 'DM', label: 'Dording Malam', time: '19:30 - 08:00', color: '#ea580c', bg: '#ffedd5', textOnBadge: '#ffffff', desc: 'Dinas Sambung Malam Perawatan' },
+  C: { code: 'C', label: 'Cuti Resmi', time: 'Cuti Tahunan / Sakit', color: '#475569', bg: '#f1f5f9', textOnBadge: '#ffffff', desc: 'Izin Cuti Terdaftar di SIMRS' },
+  L: { code: 'L', label: 'Libur / Off', time: 'Bebas Tugas', color: '#94a3b8', bg: '#f8fafc', textOnBadge: '#ffffff', desc: 'Hari Bebas Dinas Roster' },
 };
 
 const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
@@ -152,30 +151,36 @@ export default function DashboardScreen({
 
   let presensiStatusText = 'Belum Absen Masuk';
   if (hasMasuk && hasPulang) {
-    presensiStatusText = `Selesai • Masuk ${attendance.masuk} - Pulang ${attendance.pulang}`;
+    presensiStatusText = `Masuk ${attendance.masuk} • Pulang ${attendance.pulang}`;
   } else if (hasMasuk) {
-    presensiStatusText = `Sudah Masuk (${attendance.masuk}) • Siap Pulang`;
+    presensiStatusText = `Masuk ${attendance.masuk} • Siap Pulang`;
   }
+
+  // Shift hari ini
+  const todayShiftCode = jadwalDinas[currentDateNum] || 'P';
+  const todayDordingCode = jadwalDording[currentDateNum] || '-';
+  const todayShift = SHIFT_TYPES[todayShiftCode] || SHIFT_TYPES.P;
+  const todayHasDording = todayDordingCode === 'D';
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bgMain }}>
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
         {/* ================================================================= */}
-        {/* 1. HEADER PERSONAL & SAPAAN SESUAI WAKTU                         */}
+        {/* 1. HEADER PERSONAL MODERN & CLEAN (SATU HEADER UTAMA)            */}
         {/* ================================================================= */}
         <View style={dashStyles.headerCard}>
           <View style={dashStyles.headerTop}>
             <View style={dashStyles.userProfileRow}>
-              {/* Avatar dengan inisial atau logo */}
+              {/* Avatar dengan foto / logo */}
               <View style={[dashStyles.avatarContainer, { borderColor: theme.accent, backgroundColor: theme.pillBg }]}>
                 <Image
                   source={{ uri: RSJ_LOGO_URI }}
-                  style={{ width: 34, height: 34, resizeMode: 'contain' }}
+                  style={{ width: 36, height: 36, resizeMode: 'contain' }}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -185,15 +190,13 @@ export default function DashboardScreen({
                 <Text style={[dashStyles.userNameText, { color: theme.textMain }]} numberOfLines={1}>
                   {user?.name || 'Ners. Fitri Rahmadani, S.Kep'}
                 </Text>
-                <View style={dashStyles.rolePill}>
-                  <Text style={[dashStyles.rolePillText, { color: theme.accent }]}>
-                    {user?.badge || 'Ners Rawat Inap'} • RSJ Tampan
-                  </Text>
-                </View>
+                <Text style={[dashStyles.rolePillText, { color: theme.accent }]}>
+                  {user?.badge || 'Ners Rawat Inap'} • RSJ Tampan
+                </Text>
               </View>
             </View>
 
-            {/* Tombol Tema Mode & Menu */}
+            {/* Quick action: Theme toggle & Drawer menu */}
             <View style={dashStyles.quickActionsRow}>
               <TouchableOpacity
                 activeOpacity={0.75}
@@ -216,7 +219,7 @@ export default function DashboardScreen({
             </View>
           </View>
 
-          {/* Jam Digital Besar & Tanggal Terkini */}
+          {/* Jam Realtime & Tanggal Lengkap */}
           <View style={[dashStyles.liveClockBox, { backgroundColor: theme.cardSolid, borderColor: theme.borderSubtle }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <IconClock size={20} color={theme.accent} />
@@ -231,14 +234,14 @@ export default function DashboardScreen({
         </View>
 
         {/* ================================================================= */}
-        {/* 2. HERO CARD: PRESENSI SEKARANG (AKSI UTAMA HEROIK)               */}
+        {/* 2. HERO CARD: PRESENSI SEKARANG + RINGKASAN SHIFT HARI INI        */}
         {/* ================================================================= */}
         <TouchableOpacity
           activeOpacity={0.9}
           style={[dashStyles.heroPresensiCard, { backgroundColor: theme.accent }]}
           onPress={() => onNavigate('presensi', 'sekarang')}
         >
-          {/* Background pattern decor */}
+          {/* Background decor */}
           <View style={dashStyles.heroDecorCircle} />
 
           <View style={dashStyles.heroTopRow}>
@@ -255,11 +258,13 @@ export default function DashboardScreen({
 
           <View style={dashStyles.heroBody}>
             <Text style={dashStyles.heroTitle}>Presensi Sekarang</Text>
-            <Text style={dashStyles.heroSubtitle}>
-              {hasMasuk
-                ? (hasPulang ? 'Absensi harian lengkap. Terima kasih atas dedikasi Anda!' : 'Ketuk untuk melakukan absensi pulang dinas.')
-                : 'Lakukan verifikasi wajah & geofencing titik lokasi RSJ.'}
-            </Text>
+            {/* Ringkasan shift hari ini */}
+            <View style={dashStyles.heroTodayShiftPill}>
+              <Text style={dashStyles.heroTodayShiftLabel}>
+                Hari Ini: <Text style={{ fontWeight: '900' }}>{todayShift.label}</Text> ({todayShift.time})
+                {todayHasDording ? ' • Dording (+)' : ''}
+              </Text>
+            </View>
           </View>
 
           <View style={dashStyles.heroFooter}>
@@ -273,10 +278,10 @@ export default function DashboardScreen({
         </TouchableOpacity>
 
         {/* ================================================================= */}
-        {/* 3. MENU FITUR: GRID 3 KOLOM / 2x2 YANG BERSIH & ELEGAN            */}
+        {/* 3. MENU LAYANAN PEGAWAI: GRID BERSIH (IKON ATAS, JUDUL BAWAH)     */}
         {/* ================================================================= */}
         <View style={dashStyles.menuSectionHeader}>
-          <Text style={[dashStyles.sectionTitleText, { color: theme.textMain }]}>Menu Layanan Pegawai</Text>
+          <Text style={[dashStyles.sectionTitleText, { color: theme.textMain }]}>Menu Layanan</Text>
         </View>
 
         <View style={dashStyles.gridMenuContainer}>
@@ -287,10 +292,9 @@ export default function DashboardScreen({
             onPress={() => onNavigate('rekap')}
           >
             <View style={[dashStyles.gridIconCircle, { backgroundColor: '#fee2e2' }]}>
-              <IconHistory size={20} color="#dc2626" />
+              <IconHistory size={22} color="#dc2626" />
             </View>
             <Text style={[dashStyles.gridTitle, { color: theme.textMain }]}>Rekap Absensi</Text>
-            <Text style={[dashStyles.gridDesc, { color: theme.textMuted }]}>Riwayat & Log Kehadiran</Text>
           </TouchableOpacity>
 
           {/* Item 2: Presensi Luar Tilok (PDT) */}
@@ -300,10 +304,9 @@ export default function DashboardScreen({
             onPress={() => onNavigate('pdt')}
           >
             <View style={[dashStyles.gridIconCircle, { backgroundColor: '#f1f5f9' }]}>
-              <IconBriefcase size={20} color="#334155" />
+              <IconBriefcase size={22} color="#334155" />
             </View>
             <Text style={[dashStyles.gridTitle, { color: theme.textMain }]}>Presensi PDT</Text>
-            <Text style={[dashStyles.gridDesc, { color: theme.textMuted }]}>Dinas Luar & Diklat</Text>
           </TouchableOpacity>
 
           {/* Item 3: Presensi Dording (Shift 2) */}
@@ -313,17 +316,14 @@ export default function DashboardScreen({
             onPress={() => onNavigate('presensi', 'dording')}
           >
             <View style={[dashStyles.gridIconCircle, { backgroundColor: '#fef3c7' }]}>
-              <IconLayers size={20} color="#d97706" />
+              <IconLayers size={22} color="#d97706" />
             </View>
             <Text style={[dashStyles.gridTitle, { color: theme.textMain }]}>Presensi Dording</Text>
-            <Text style={[dashStyles.gridDesc, { color: theme.textMuted }]}>
-              {dordingAttendance?.masuk ? `Masuk: ${dordingAttendance.masuk}` : 'Dinas Sambung (Shift 2)'}
-            </Text>
           </TouchableOpacity>
         </View>
 
         {/* ================================================================= */}
-        {/* 4. KALENDER JADWAL TERPADU (DINAS + INDIKATOR DORDING)            */}
+        {/* 4. KALENDER JADWAL PROPORSI TERBAIK: SEL PERSEGI & KODE JELAS     */}
         {/* ================================================================= */}
         <View style={[dashStyles.calendarCardUnified, { backgroundColor: theme.cardSolid, borderColor: theme.borderSubtle }]}>
           <View style={dashStyles.calendarHeaderRow}>
@@ -332,7 +332,7 @@ export default function DashboardScreen({
                 Jadwal Dinas & Dording
               </Text>
               <Text style={[dashStyles.calendarSubTitle, { color: theme.textMuted }]}>
-                {currentMonthName} {currentYearNum} • Roster Terpadu
+                {currentMonthName} {currentYearNum} • Ketuk tanggal untuk detail
               </Text>
             </View>
             <View style={[dashStyles.statusTag, { backgroundColor: theme.pillBg }]}>
@@ -343,7 +343,7 @@ export default function DashboardScreen({
           {/* Hari dalam seminggu header */}
           <View style={dashStyles.weekDaysRow}>
             {DAY_NAMES.map((d, idx) => (
-              <View key={`day-${idx}`} style={dashStyles.weekDayCell}>
+              <View key={`day-hdr-${idx}`} style={dashStyles.weekDayCell}>
                 <Text style={[dashStyles.weekDayText, { color: idx === 0 || idx === 6 ? '#ef4444' : theme.textMuted }]}>
                   {d}
                 </Text>
@@ -351,7 +351,7 @@ export default function DashboardScreen({
             ))}
           </View>
 
-          {/* Grid Tanggal Kalender */}
+          {/* Grid Tanggal Kalender (Proporsi Kotak Presisi ~52-56px tinggi) */}
           <View style={dashStyles.daysGridUnified}>
             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((dayNum) => {
               const shiftCode = jadwalDinas[dayNum] || 'P';
@@ -362,27 +362,31 @@ export default function DashboardScreen({
 
               return (
                 <TouchableOpacity
-                  key={`day-${dayNum}`}
+                  key={`day-cal-${dayNum}`}
                   activeOpacity={0.75}
                   style={[
                     dashStyles.dayTileUnified,
-                    { backgroundColor: isToday ? theme.pillBg : (activeDarkMode ? 'rgba(255,255,255,0.03)' : '#f8fafc') },
-                    isToday && { borderColor: theme.accent, borderWidth: 1.5 },
+                    { backgroundColor: shiftInfo.bg },
+                    isToday && { borderColor: theme.accent, borderWidth: 2 },
+                    hasDording && dashStyles.dayTileDordingRing,
                   ]}
                   onPress={() => setSelectedDayDetail(dayNum)}
                 >
-                  <Text style={[dashStyles.dayNumberText, { color: isToday ? theme.accent : theme.textMain }]}>
+                  {/* Tanggal kecil di pojok kiri atas */}
+                  <Text style={[dashStyles.dayCornerNumber, isToday && { color: theme.accent, fontWeight: '900' }]}>
                     {dayNum}
                   </Text>
-                  
-                  {/* Badge Kode Shift */}
-                  <View style={[dashStyles.shiftBadgeMini, { backgroundColor: shiftInfo.color }]}>
-                    <Text style={dashStyles.shiftBadgeMiniText}>{shiftCode}</Text>
-                  </View>
 
-                  {/* Dot Indikator Dording (jika ada jadwal dording) */}
+                  {/* Huruf Shift Besar dan Jelas di Tengah */}
+                  <Text style={[dashStyles.shiftCenterLetter, { color: shiftInfo.color }]}>
+                    {shiftCode}
+                  </Text>
+
+                  {/* Badge 'D' Jelas untuk Dording di pojok kanan atas */}
                   {hasDording && (
-                    <View style={dashStyles.dordingDotIndicator} />
+                    <View style={dashStyles.dordingBadgeMini}>
+                      <Text style={dashStyles.dordingBadgeText}>D</Text>
+                    </View>
                   )}
                 </TouchableOpacity>
               );
@@ -394,24 +398,34 @@ export default function DashboardScreen({
             <Text style={[dashStyles.legendTitleText, { color: theme.textMain }]}>Keterangan Shift:</Text>
             <View style={dashStyles.legendWrap}>
               <View style={dashStyles.legendItemRow}>
-                <View style={[dashStyles.legendDotSmall, { backgroundColor: '#059669' }]} />
-                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>P = Pagi (07-16)</Text>
+                <View style={[dashStyles.legendChipColor, { backgroundColor: '#059669' }]}>
+                  <Text style={dashStyles.legendChipLetter}>P</Text>
+                </View>
+                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>Pagi (07:00–16:00)</Text>
               </View>
               <View style={dashStyles.legendItemRow}>
-                <View style={[dashStyles.legendDotSmall, { backgroundColor: '#0284c7' }]} />
-                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>S = Sore (13-21)</Text>
+                <View style={[dashStyles.legendChipColor, { backgroundColor: '#0284c7' }]}>
+                  <Text style={dashStyles.legendChipLetter}>S</Text>
+                </View>
+                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>Sore (13:00–21:00)</Text>
               </View>
               <View style={dashStyles.legendItemRow}>
-                <View style={[dashStyles.legendDotSmall, { backgroundColor: '#475569' }]} />
-                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>C = Cuti</Text>
+                <View style={[dashStyles.legendChipColor, { backgroundColor: '#475569' }]}>
+                  <Text style={dashStyles.legendChipLetter}>C</Text>
+                </View>
+                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>Cuti</Text>
               </View>
               <View style={dashStyles.legendItemRow}>
-                <View style={[dashStyles.legendDotSmall, { backgroundColor: '#94a3b8' }]} />
-                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>L = Libur</Text>
+                <View style={[dashStyles.legendChipColor, { backgroundColor: '#94a3b8' }]}>
+                  <Text style={dashStyles.legendChipLetter}>L</Text>
+                </View>
+                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>Libur</Text>
               </View>
               <View style={dashStyles.legendItemRow}>
-                <View style={[dashStyles.legendDotSmall, { backgroundColor: '#d97706', borderRadius: 2 }]} />
-                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>Titik Oranye = Dording</Text>
+                <View style={[dashStyles.legendChipColor, { backgroundColor: '#d97706' }]}>
+                  <Text style={dashStyles.legendChipLetter}>D</Text>
+                </View>
+                <Text style={[dashStyles.legendItemText, { color: theme.textSub }]}>Dording (Dinas Tambahan)</Text>
               </View>
             </View>
           </View>
@@ -470,10 +484,10 @@ export default function DashboardScreen({
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[dashStyles.detailShiftLabel, { color: '#0f172a' }]}>{shift.label}</Text>
-                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#334155', marginTop: 2 }}>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#334155', marginTop: 2 }}>
                           Jam Kerja: {shift.time}
                         </Text>
-                        <Text style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                        <Text style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
                           {shift.desc}
                         </Text>
                       </View>
@@ -488,7 +502,7 @@ export default function DashboardScreen({
                         <Text style={[dashStyles.detailShiftLabel, { color: '#0f172a' }]}>
                           {hasDording ? 'Penugasan Dording (Shift 2)' : 'Bebas Dinas Sambung'}
                         </Text>
-                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#334155', marginTop: 2 }}>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#334155', marginTop: 2 }}>
                           {hasDording ? 'Waktu: 13:00 - 21:00 WIB' : 'Tidak ada jadwal shift sambung hari ini.'}
                         </Text>
                       </View>
@@ -514,8 +528,8 @@ export default function DashboardScreen({
 const dashStyles = StyleSheet.create({
   // ─── Header Personal ───
   headerCard: {
-    marginBottom: 18,
-    gap: 12,
+    marginBottom: 16,
+    gap: 10,
   },
   headerTop: {
     flexDirection: 'row',
@@ -538,23 +552,20 @@ const dashStyles = StyleSheet.create({
     overflow: 'hidden',
   },
   greetingText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.2,
   },
   userNameText: {
-    fontSize: 16,
+    fontSize: 16.5,
     fontWeight: '800',
     marginTop: 1,
     letterSpacing: 0.2,
   },
-  rolePill: {
-    alignSelf: 'flex-start',
-    marginTop: 2,
-  },
   rolePillText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
+    marginTop: 2,
   },
   quickActionsRow: {
     flexDirection: 'row',
@@ -562,9 +573,9 @@ const dashStyles = StyleSheet.create({
     gap: 8,
   },
   iconCircleBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -589,7 +600,7 @@ const dashStyles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   dateSubText: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '600',
   },
 
@@ -597,7 +608,7 @@ const dashStyles = StyleSheet.create({
   heroPresensiCard: {
     borderRadius: 18,
     padding: 18,
-    marginBottom: 20,
+    marginBottom: 18,
     overflow: 'hidden',
     position: 'relative',
     ...(Platform.OS === 'web'
@@ -643,11 +654,11 @@ const dashStyles = StyleSheet.create({
   },
   heroStatusBadgeText: {
     color: '#ffffff',
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '700',
   },
   heroBody: {
-    marginVertical: 12,
+    marginVertical: 10,
   },
   heroTitle: {
     color: '#ffffff',
@@ -655,18 +666,25 @@ const dashStyles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0.3,
   },
-  heroSubtitle: {
-    color: 'rgba(255, 255, 255, 0.92)',
+  heroTodayShiftPill: {
+    marginTop: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  heroTodayShiftLabel: {
+    color: '#ffffff',
     fontSize: 12.5,
-    lineHeight: 18,
-    marginTop: 4,
+    fontWeight: '600',
   },
   heroFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 4,
-    paddingTop: 12,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.2)',
   },
@@ -678,7 +696,7 @@ const dashStyles = StyleSheet.create({
   },
   heroStatusPillText: {
     color: '#ffffff',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
   },
   heroActionArrow: {
@@ -690,56 +708,54 @@ const dashStyles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // ─── Menu Grid ───
+  // ─── Menu Grid Bersih ───
   menuSectionHeader: {
-    marginBottom: 10,
+    marginBottom: 8,
   },
   sectionTitleText: {
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: '800',
     letterSpacing: 0.2,
   },
   gridMenuContainer: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 20,
+    marginBottom: 18,
   },
   gridCard: {
     flex: 1,
     borderRadius: 16,
-    padding: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
     borderWidth: 1,
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
     ...(Platform.OS === 'web'
       ? {
-          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.04)',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
         }
       : { elevation: 2 }),
   },
   gridIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
   gridTitle: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '800',
-    marginBottom: 2,
-  },
-  gridDesc: {
-    fontSize: 10.5,
-    lineHeight: 14,
+    textAlign: 'center',
   },
 
-  // ─── Kalender Terpadu ───
+  // ─── Kalender Terpadu Proporsional ───
   calendarCardUnified: {
     borderRadius: 18,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
-    marginBottom: 20,
+    marginBottom: 16,
     ...(Platform.OS === 'web'
       ? {
           boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
@@ -750,7 +766,7 @@ const dashStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 14,
+    marginBottom: 12,
   },
   calendarMainTitle: {
     fontSize: 15,
@@ -758,7 +774,7 @@ const dashStyles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   calendarSubTitle: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -768,72 +784,84 @@ const dashStyles = StyleSheet.create({
     borderRadius: 6,
   },
   statusTagText: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800',
   },
   weekDaysRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingBottom: 8,
+    paddingBottom: 6,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(150, 150, 150, 0.15)',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   weekDayCell: {
     flex: 1,
     alignItems: 'center',
   },
   weekDayText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '700',
   },
   daysGridUnified: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'flex-start',
+    gap: 4,
+    justifyContent: 'space-between',
   },
   dayTileUnified: {
-    width: '13%',
-    aspectRatio: 0.85,
+    width: '13.3%',
+    height: 52, // Tinggi tetap ideal ~52px
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    padding: 2,
+    marginVertical: 2,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  dayNumberText: {
-    fontSize: 11.5,
-    fontWeight: '800',
+  dayTileDordingRing: {
+    borderWidth: 1.5,
+    borderColor: '#d97706',
   },
-  shiftBadgeMini: {
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 4,
-    marginTop: 2,
+  dayCornerNumber: {
+    position: 'absolute',
+    top: 3,
+    left: 4,
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748b',
   },
-  shiftBadgeMiniText: {
+  shiftCenterLetter: {
+    fontSize: 17,
+    fontWeight: '900',
+    marginTop: 4,
+  },
+  dordingBadgeMini: {
+    position: 'absolute',
+    top: 2,
+    right: 3,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#d97706',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dordingBadgeText: {
     color: '#ffffff',
     fontSize: 9,
     fontWeight: '900',
-  },
-  dordingDotIndicator: {
-    position: 'absolute',
-    top: 3,
-    right: 3,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#d97706',
+    lineHeight: 12,
   },
   legendBoxUnified: {
-    marginTop: 14,
+    marginTop: 12,
     padding: 10,
     borderRadius: 12,
     borderWidth: 1,
   },
   legendTitleText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '800',
     marginBottom: 6,
   },
@@ -845,25 +873,32 @@ const dashStyles = StyleSheet.create({
   legendItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
   },
-  legendDotSmall: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  legendChipColor: {
+    width: 18,
+    height: 18,
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  legendChipLetter: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '900',
   },
   legendItemText: {
-    fontSize: 10.5,
+    fontSize: 11.5,
     fontWeight: '600',
   },
 
   // ─── Footer ───
   footerWrap: {
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   footerText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '600',
   },
 
@@ -895,11 +930,11 @@ const dashStyles = StyleSheet.create({
     borderBottomColor: 'rgba(150, 150, 150, 0.15)',
   },
   modalTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '900',
   },
   modalSubtitle: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -931,7 +966,7 @@ const dashStyles = StyleSheet.create({
     fontWeight: '900',
   },
   detailShiftLabel: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: '800',
   },
   modalCloseBtnAction: {
@@ -942,7 +977,7 @@ const dashStyles = StyleSheet.create({
   },
   modalCloseBtnText: {
     color: '#ffffff',
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: '800',
   },
 });

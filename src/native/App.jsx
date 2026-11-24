@@ -376,19 +376,10 @@ export default function App() {
       <View style={[styles.appContainer, { backgroundColor: theme.bgMain }]}>
         <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
 
-        {/* Global App Header */}
-        <View style={[styles.header, { backgroundColor: theme.bgHero, borderBottomColor: theme.border }]}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity
-              style={[styles.menuButton, { backgroundColor: theme.pillBg, borderColor: theme.border }]}
-              activeOpacity={0.7}
-              onPress={() => setDrawerOpen(true)}
-            >
-              <Text style={[styles.menuText, { color: theme.textMain }]}>Menu</Text>
-            </TouchableOpacity>
-
-            {/* Back Button if not on dashboard */}
-            {screen !== 'dashboard' && (
+        {/* Global App Header (Hanya tampil di luar Beranda, agar tidak ganda dengan Header Beranda) */}
+        {screen !== 'dashboard' && (
+          <View style={[styles.header, { backgroundColor: theme.bgHero, borderBottomColor: theme.border }]}>
+            <View style={styles.headerLeft}>
               <TouchableOpacity
                 style={styles.backButton}
                 activeOpacity={0.7}
@@ -398,44 +389,29 @@ export default function App() {
                   {screen === 'admin' ? '← Portal Pegawai (/)' : '← Beranda'}
                 </Text>
               </TouchableOpacity>
-            )}
-          </View>
+            </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            {screen === 'dashboard' && (
-              <Image
-                source={{ uri: RSJ_LOGO_URI }}
-                style={{ width: 22, height: 22, resizeMode: 'contain' }}
-              />
-            )}
-            <Text style={[styles.headerTitle, { color: theme.textMain }]}>{getScreenTitle()}</Text>
-          </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={[styles.headerTitle, { color: theme.textMain }]}>{getScreenTitle()}</Text>
+            </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <TouchableOpacity
-              style={[
-                styles.notification,
-                { width: 'auto', paddingHorizontal: 10, backgroundColor: theme.pillBg, borderColor: theme.border },
-              ]}
-              activeOpacity={0.7}
-              onPress={handleToggleDarkMode}
-              accessibilityLabel="Ganti Tema Gelap / Terang"
-              title="Ganti Tema Gelap / Terang"
-            >
-              <Text style={{ fontSize: 11, fontWeight: '800', color: theme.textMain }}>
-                {isDarkMode ? 'Gelap' : 'Terang'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.notification, { backgroundColor: theme.pillBg, borderColor: theme.border }]}
-              activeOpacity={0.7}
-              onPress={() => Alert.alert('Notifikasi', 'Tidak ada notifikasi penting saat ini.')}
-            >
-              <Text style={{ fontSize: 11, fontWeight: '800', color: theme.textSub }}>Info</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TouchableOpacity
+                style={[
+                  styles.notification,
+                  { width: 'auto', paddingHorizontal: 10, backgroundColor: theme.pillBg, borderColor: theme.border },
+                ]}
+                activeOpacity={0.7}
+                onPress={handleToggleDarkMode}
+                accessibilityLabel="Ganti Tema Gelap / Terang"
+              >
+                <Text style={{ fontSize: 11, fontWeight: '800', color: theme.textMain }}>
+                  {isDarkMode ? 'Gelap' : 'Terang'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Main Content Area */}
         <View style={{ flex: 1, position: 'relative', backgroundColor: theme.bgMain }}>
