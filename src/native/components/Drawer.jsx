@@ -96,14 +96,16 @@ export default function Drawer({ open, activeScreen, user, onClose, onNavigate, 
         <View style={{ flex: 1 }}>
           <NavItem label="Beranda" active={activeScreen === 'dashboard'} theme={activeTheme}
             onPress={() => { onNavigate('dashboard'); onClose(); }} />
-          <NavItem label="Presensi Sekarang" active={activeScreen === 'presensi_sekarang'} theme={activeTheme}
-            onPress={() => { onNavigate('presensi', 'sekarang'); onClose(); }} />
-          <NavItem label="Rekap Absensi" active={activeScreen === 'rekap'} theme={activeTheme}
-            onPress={() => { onNavigate('rekap'); onClose(); }} />
+          <NavItem label="Presensi Reguler" active={activeScreen === 'presensi'} theme={activeTheme}
+            onPress={() => { onNavigate('presensi'); onClose(); }} />
+          <NavItem label="Presensi Dording" active={activeScreen === 'dording'} theme={activeTheme}
+            onPress={() => { onNavigate('dording'); onClose(); }} />
           <NavItem label="Presensi Luar Tilok (PDT)" active={activeScreen === 'pdt'} theme={activeTheme}
             onPress={() => { onNavigate('pdt'); onClose(); }} />
-          <NavItem label="Presensi Dording" active={activeScreen === 'presensi_dording'} theme={activeTheme}
-            onPress={() => { onNavigate('presensi', 'dording'); onClose(); }} />
+          <NavItem label="Jadwal Dinas" active={activeScreen === 'jadwal'} theme={activeTheme}
+            onPress={() => { onNavigate('jadwal'); onClose(); }} />
+          <NavItem label="Rekap Absensi" active={activeScreen === 'rekap'} theme={activeTheme}
+            onPress={() => { onNavigate('rekap'); onClose(); }} />
           {(user?.roleType === 'super_admin' || user?.roleType === 'admin_umum' || user?.roleType === 'ka_instalasi' || activeScreen === 'admin') && (
             <NavItem label="👑 Panel Admin & Kendali" active={activeScreen === 'admin'} theme={activeTheme} isAdmin={true}
               onPress={() => { onNavigate('admin'); onClose(); }} />

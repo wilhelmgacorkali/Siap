@@ -11,6 +11,7 @@ import {
 import LoginScreen from './screens/LoginScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import AttendanceScreen from './screens/AttendanceScreen';
+import DordingScreen from './screens/DordingScreen';
 import { ReportsScreen } from './screens/ReportsScreen';
 import PdtScreen from './screens/PdtScreen';
 import AdminScreen from './screens/AdminScreen';
@@ -254,7 +255,8 @@ export default function App() {
     const score = typeof data === 'object' ? data.score : null;
     let photo = typeof data === 'object' ? data.photo : null;
     const targetType = (typeof data === 'object' && data.type) ? data.type : attendanceType;
-    const modeKey = mode === 'dording' ? 'dording' : 'sekarang';
+    const isDordingAction = mode === 'dording' || screen === 'dording';
+    const modeKey = isDordingAction ? 'dording' : 'sekarang';
     const todayStr = getTodayDateString();
 
     if (!photo) {
@@ -262,7 +264,7 @@ export default function App() {
         user,
         type: targetType,
         time,
-        isDording: mode === 'dording',
+        isDording: isDordingAction,
       });
     }
 
@@ -356,30 +358,24 @@ export default function App() {
   }
 
   const getScreenTitle = () => {
-    if (screen === 'presensi') {
-      return mode === 'dording' ? 'Presensi Dording' : 'Presensi Sekarang';
-    }
+    if (screen === 'presensi') return 'Presensi Reguler';
+    if (screen === 'dording') return 'Presensi Dording';
     if (screen === 'rekap') return 'Rekap Absensi';
     if (screen === 'jadwal') return 'Jadwal Dinas & Dording';
-    if (screen === 'pdt') return 'Pegawai Presensi PDT';
+    if (screen === 'pdt') return 'Presensi Luar Tilok (PDT)';
     if (screen === 'admin') return 'Dashboard Admin';
     return 'SIAP RSJ Tampan';
   };
 
-  const activeNavKey =
-    screen === 'presensi'
-      ? mode === 'dording'
-        ? 'presensi_dording'
-        : 'presensi_sekarang'
-      : screen;
+  const activeNavKey = screen;
 
   return (
     <SafeAreaView style={[styles.appBackground, { backgroundColor: theme.bgMain }]}>
       <View style={[styles.appContainer, { backgroundColor: theme.bgMain }]}>
         <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
 
-        {/* Global App Header (Hanya tampil di luar Beranda, Admin, & Jadwal agar tidak bertumpuk) */}
-        {screen !== 'dashboard' && screen !== 'admin' && screen !== 'jadwal' && (
+        {/* Global App Header (Hanya tampil di Rekap Absensi, halaman lain memiliki header kustom masing-masing) */}
+        {screen === 'rekap' && (
           <View style={[styles.header, { backgroundColor: theme.bgHero, borderBottomColor: theme.border }]}>
             <View style={styles.headerLeft}>
               <TouchableOpacity
@@ -432,10 +428,9 @@ export default function App() {
 
           {screen === 'presensi' && (
             <AttendanceScreen
-              mode={mode}
               user={user}
               currentTime={currentTime}
-              attendance={mode === 'dording' ? attendance.dording : attendance.sekarang}
+              attendance={attendance.sekarang}
               allAttendance={attendance}
               modalVisible={modalVisible}
               attendanceType={attendanceType}
@@ -448,9 +443,29 @@ export default function App() {
               onCloseModal={() => setModalVisible(false)}
               onSubmit={submitAttendance}
               onResetAttendance={handleResetTodayAttendance}
-              onSwitchMode={(newMode) => navigate('presensi', newMode)}
               onNavigateToPdt={() => setScreen('pdt')}
               onBack={() => setScreen('dashboard')}
+            />
+          )}
+
+          {screen === 'dording' && (
+            <DordingScreen
+              user={user}
+              currentTime={currentTime}
+              attendance={attendance.dording}
+              allAttendance={attendance}
+              modalVisible={modalVisible}
+              onOpenModal={(type) => {
+                setAttendanceType(type);
+                setModalVisible(true);
+              }}
+              onCloseModal={() => setModalVisible(false)}
+              onSubmit={submitAttendance}
+              onResetAttendance={handleResetTodayAttendance}
+              onNavigateToPdt={() => setScreen('pdt')}
+              onBack={() => setScreen('dashboard')}
+              isDarkMode={isDarkMode}
+              theme={theme}
             />
           )}
 

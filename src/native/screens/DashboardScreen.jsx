@@ -313,7 +313,7 @@ export default function DashboardScreen({
           <TouchableOpacity
             activeOpacity={0.8}
             style={[dashStyles.gridCard, { backgroundColor: theme.cardSolid, borderColor: theme.borderSubtle }]}
-            onPress={() => onNavigate('presensi', 'dording')}
+            onPress={() => onNavigate('dording')}
           >
             <View style={[dashStyles.gridIconCircle, { backgroundColor: '#fef3c7' }]}>
               <IconLayers size={22} color="#d97706" />
